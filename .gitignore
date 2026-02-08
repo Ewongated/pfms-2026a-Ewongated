@@ -1,0 +1,72 @@
+# --------------------------------------
+# Build / Install / Logs (ROS 2 + colcon)
+# --------------------------------------
+build/
+*-build/
+build-*/
+/build/
+/install/
+/log/
+/test_results/
+
+# --------------------------------------
+# CMake build artifacts (generic)
+# --------------------------------------
+CMakeLists.txt.use*
+CMakeFiles/
+CMakeCache.txt
+CMakeScripts
+Testing
+Makefile
+cmake_install.cmake
+install_manifest.txt
+CTestTestfile.cmake
+_deps
+
+# --------------------------------------
+# Compiled objects / libraries / executables
+# --------------------------------------
+*.o
+*.obj
+*.lo
+*.la
+*.a
+*.dylib
+*.exe
+*.out
+*.app
+
+# --------------------------------------
+# IDE / Editor metadata
+# --------------------------------------
+# VS Code: ignore workspace cache but allow recommended settings/tasks
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/extensions.json
+!.vscode/launch.json
+
+
+# ccls / clangd / language servers
+.ccls-cache/
+.cache/
+.cache/clangd/
+.clangd/
+
+# --------------------------------------
+# OS / Shell / Misc
+# --------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+
+# --------------------------------------
+# Documentation build outputs
+# --------------------------------------
+latex/
+html/
+site/
+public/
+
