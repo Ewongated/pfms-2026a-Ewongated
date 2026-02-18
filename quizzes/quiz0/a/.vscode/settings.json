@@ -1,0 +1,19 @@
+{
+    "ROS2.distro": "humble",
+    "python.autoComplete.extraPaths": [
+        "/home/student/ros2_ws/build/sjtu_drone_control",
+        "/home/student/ros2_ws/install/sjtu_drone_control/lib/python3.10/site-packages",
+        "/home/student/ros2_ws/build/sjtu_drone_bringup",
+        "/home/student/ros2_ws/install/sjtu_drone_bringup/lib/python3.10/site-packages",
+        "/opt/ros/humble/lib/python3.10/site-packages",
+        "/opt/ros/humble/local/lib/python3.10/dist-packages"
+    ],
+    "python.analysis.extraPaths": [
+        "/home/student/ros2_ws/build/sjtu_drone_control",
+        "/home/student/ros2_ws/install/sjtu_drone_control/lib/python3.10/site-packages",
+        "/home/student/ros2_ws/build/sjtu_drone_bringup",
+        "/home/student/ros2_ws/install/sjtu_drone_bringup/lib/python3.10/site-packages",
+        "/opt/ros/humble/lib/python3.10/site-packages",
+        "/opt/ros/humble/local/lib/python3.10/dist-packages"
+    ]
+}
