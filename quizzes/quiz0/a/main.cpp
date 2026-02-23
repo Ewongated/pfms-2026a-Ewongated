@@ -55,20 +55,20 @@ int main () {
     std::vector<double> myVec;
 
     //Uncomment below to assign the array to a vector ( TASK 1 )
-//    assignArrayToVector(x,arraySize,myVec);
+   assignArrayToVector(x,arraySize,myVec);
 
     //Uncomment below to compute mean and Standard Deviation ( TASK 2 )
-//    Stats stats = computeMeanAndStdDev(myVec);
+   Stats stats = computeMeanAndStdDev(myVec);
 
     //Uncomment below section to remove numbers larger than ( TASK 3 )
-//    removeNumbersLargerThan(myVec,stats.mean+(2*stats.std_dev));
-//    std::cout << "vector with elements over (" << stats.mean  + 2 * stats.std_dev << ") removed" << std::endl;
-//    printVec(myVec);
+   removeNumbersLargerThan(myVec,stats.mean+(2*stats.std_dev));
+   std::cout << "vector with elements over (" << stats.mean  + 2 * stats.std_dev << ") removed" << std::endl;
+   printVec(myVec);
 
     // Uncomment below section to obtain vector of elements less than ( TASK 4)
-//    std::vector<double> myVecSmall = returnVecWithNumbersSmallerThan(myVec,stats.mean-(2*stats.std_dev) );
-//    std::cout << "vector with elements under (" << stats.mean  - 2*  stats.std_dev << ") " << std::endl;
-//    printVec(myVecSmall);
+   std::vector<double> myVecSmall = returnVecWithNumbersSmallerThan(myVec,stats.mean-(2*stats.std_dev) );
+   std::cout << "vector with elements under (" << stats.mean  - 2*  stats.std_dev << ") " << std::endl;
+   printVec(myVecSmall);
 
 
     // Main function should return an integer

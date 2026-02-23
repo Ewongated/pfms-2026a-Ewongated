@@ -8,6 +8,8 @@
 
 #include <cstring> //for memcpy example
 
+#include <cmath>
+
 // thread and chrono are for time and sleeping respectively - added for class
 #include <chrono>
 #include <thread>
@@ -31,27 +33,50 @@ void populateWithRandomNumbers(double x[], unsigned int& array_size, unsigned in
 
 
 //1) TASK: Implement function `assignArrayToVector`that assigns elements of array `x` to a vector named `vec`
-void assignArrayToVector(double x[] ,unsigned int arraySize ,std::vector<double> &myVec ){
-
+void assignArrayToVector(double x[], unsigned int arraySize, std::vector<double> &myVec) {
+    for (size_t i = 0; i < arraySize; ++i) {
+        myVec.push_back(x[i]);
+    }
 }
 
 
 
 //2) TASK: Implement function `removeNumbersLargerThan` that accepts vector `myVec` and removes elements of `myVec` greater than a `limit`
 void removeNumbersLargerThan(std::vector<double> &myVec, double limit){
-
+    myVec.erase(
+        std::remove_if(myVec.begin(), myVec.end(), 
+            [limit](double x){ return x > limit; }),
+        myVec.end()
+    );
 }
 
 
 //3) TASK: Implement function `computeMeanAndStdDev` that computes the mean and standard deviation of `myVec` and returns the `Stats` structure with these values.
 Stats computeMeanAndStdDev(std::vector<double> myVec){
+    Stats result;
+    int n = myVec.size();
 
+    // Compute mean
+    double sum = 0.0;
+    for(double x : myVec){
+        sum += x;
+    }
+    result.mean = sum / n;
+
+    // Compute standard deviation
+    double squaredDiffSum = 0.0;
+    for(double x : myVec){
+        squaredDiffSum += (x - result.mean) * (x - result.mean);
+    }
+    result.std_dev = std::sqrt(squaredDiffSum / n);
+
+    return result;
 }
 
 //4) TASK:  Implement function `returnVecWithNumbersSmallerThan` that returns a vector containing elements of `myVec` vector that are less than `limit`.
 std::vector<double> returnVecWithNumbersSmallerThan(std::vector<double> myVec, double limit){
-
-
+    removeNumbersLargerThan(myVec, limit);
+    return myVec;
 }
 
 
