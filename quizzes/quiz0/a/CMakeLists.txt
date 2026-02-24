@@ -20,3 +20,7 @@ add_executable(my_arrays main.cpp arrays.cpp)
 if(BUILD_TESTS)
     add_subdirectory(test)
 endif()
+
+if(MARKING_TESTS)
+    add_subdirectory(marking)
+endif()
