@@ -70,3 +70,9 @@ html/
 site/
 public/
 
+
+# C/C++ extension caches (can be large)
+.vscode/browse.vc.db
+.vscode/browse.vc.db-shm
+.vscode/browse.vc.db-wal
+.vscode/ipch/
