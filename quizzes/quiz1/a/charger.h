@@ -9,6 +9,8 @@ public:
   //   This function needs to enable crteating an object as per 
   //    the specification given in the README.md file. 
   
+  Charger(std::string model, unsigned int batteryLevel, bool charging);
+  
   /**
    * @brief Function that obtains model
    * @return model of the Charger
