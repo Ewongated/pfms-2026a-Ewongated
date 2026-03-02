@@ -28,7 +28,7 @@ public:
 // TASK: 
 // Change the access specifier here that the Rectabngle class (which is derived class) can access this member variable
 // The variable should not be made public (to be accessed by an object of the Rectangle or Shape class)
-private:
+protected:
     std::string description_;//!< description of shape
 
 

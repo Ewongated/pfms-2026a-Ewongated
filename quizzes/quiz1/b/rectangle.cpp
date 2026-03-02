@@ -4,6 +4,17 @@
 //    TASK 1
 //    The `Rectangle` class already has a special member function. Refer header and README.md for details of the requirements
 
+Rectangle::Rectangle(double width, double height)
+{
+    width_ = width;
+    height_ = height;
+    if (width_ == height_) {
+        description_ = "square";
+    } else {
+        description_ = "rectangle";
+    }
+}
+
 void Rectangle::setHeightWidth(double width, double height)
 {
 //!NOTES
