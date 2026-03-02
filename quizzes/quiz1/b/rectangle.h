@@ -5,16 +5,18 @@
 
 // TASK:
 //Modify the file rectangle [Rectangle] so it inherits from the base class of Shape and is a derived class of Shape. 
-class Rectangle
+class Rectangle: public Shape
 {
 
-
-public:
-//    TASK 1
-//    The Rectangle class needs to have a special member function that enables the Rectangle to on creation have width_ , height_ initialised 
-//    with values supplied when creating object of class. This function needs to set the description_ on creation of the class to be either square or 
-//    rectangle depending on the width and heigth supplied by the user.
-
+    
+    public:
+    //    TASK 1
+    //    The Rectangle class needs to have a special member function that enables the Rectangle to on creation have width_ , height_ initialised 
+    //    with values supplied when creating object of class. This function needs to set the description_ on creation of the class to be either square or 
+    //    rectangle depending on the width and heigth supplied by the user.
+    
+    Rectangle(double width, double height);
+    
     /**
      * @brief Function that sets width and height
      * @param width in [m]
