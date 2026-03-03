@@ -18,3 +18,7 @@ if(BUILD_TESTS)
     add_subdirectory(test)
 endif()
 ##################################################################################################
+
+if(MARKING_TESTS)
+    add_subdirectory(marking)
+endif()
