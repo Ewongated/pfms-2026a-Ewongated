@@ -1,0 +1,123 @@
+---------------------------------------------------------------------
+ A 
+---------------------------------------------------------------------
+-- The C compiler identification is GNU 11.4.0
+-- The CXX compiler identification is GNU 11.4.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Found GTest: /usr/lib/x86_64-linux-gnu/cmake/GTest/GTestConfig.cmake (found version "1.11.0")  
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/student/git/pfms-2026a-/pfms-2026a-Ewongated/quizzes/quiz1/a/build
+**********************************************************************
+Making tests distributed with quiz
+----------------------------------------------------------------------
+[ 16%] Building CXX object marking/CMakeFiles/charger_marking.dir/__/charger.cpp.o
+[ 33%] Linking CXX static library libcharger_marking.a
+[ 33%] Built target charger_marking
+[ 50%] Building CXX object marking/CMakeFiles/processing_marking.dir/__/processing.cpp.o
+[ 66%] Linking CXX static library libprocessing_marking.a
+[ 66%] Built target processing_marking
+[ 83%] Building CXX object marking/CMakeFiles/selfTest.dir/utest.cpp.o
+[100%] Linking CXX executable selfTest
+[100%] Built target selfTest
+----------------------------------------------------------------------
+Making marking 
+----------------------------------------------------------------------
+Consolidate compiler generated dependencies of target charger_marking
+[ 33%] Built target charger_marking
+Consolidate compiler generated dependencies of target processing_marking
+[ 66%] Built target processing_marking
+[ 83%] Building CXX object marking/CMakeFiles/markingTest.dir/utest2.cpp.o
+[100%] Linking CXX executable markingTest
+[100%] Built target markingTest
+----------------------------------------------------------------------
+Executing tests distributed with quiz
+---------------------------------------------------------------------
+[==========] Running 3 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 1 test from ClassTest
+[ RUN      ] ClassTest.CreateObject
+[       OK ] ClassTest.CreateObject (0 ms)
+[----------] 1 test from ClassTest (0 ms total)
+
+[----------] 2 tests from FunctionTest
+[ RUN      ] FunctionTest.CheckRecharge
+[       OK ] FunctionTest.CheckRecharge (0 ms)
+[ RUN      ] FunctionTest.DetectLowestBatteryLevel
+[       OK ] FunctionTest.DetectLowestBatteryLevel (0 ms)
+[----------] 2 tests from FunctionTest (0 ms total)
+
+[----------] Global test environment tear-down
+[==========] 3 tests from 2 test suites ran. (0 ms total)
+[  PASSED  ] 3 tests.
+---------------------------------------------------------------------
+---------------------------------------------------------------------
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from FunctionTest
+[ RUN      ] FunctionTest.DetectEligibleForRecharge
+[       OK ] FunctionTest.DetectEligibleForRecharge (0 ms)
+[----------] 1 test from FunctionTest (0 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (0 ms total)
+[  PASSED  ] 1 test.
+---------------------------------------------------------------------
+---------------------------------------------------------------------
+Part A scored 4
+---------------------------------------------------------------------
+---------------------------------------------------------------------
+ B 
+---------------------------------------------------------------------
+-- The C compiler identification is GNU 11.4.0
+-- The CXX compiler identification is GNU 11.4.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Found GTest: /usr/lib/x86_64-linux-gnu/cmake/GTest/GTestConfig.cmake (found version "1.11.0")  
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/student/git/pfms-2026a-/pfms-2026a-Ewongated/quizzes/quiz1/b/build
+**********************************************************************
+Making tests distributed with quiz
+----------------------------------------------------------------------
+[ 20%] Building CXX object marking/CMakeFiles/shapesTesting.dir/__/shape.cpp.o
+[ 40%] Building CXX object marking/CMakeFiles/shapesTesting.dir/__/rectangle.cpp.o
+[ 60%] Linking CXX static library libshapesTesting.a
+[ 60%] Built target shapesTesting
+[ 80%] Building CXX object marking/CMakeFiles/selfTest.dir/utest.cpp.o
+[100%] Linking CXX executable selfTest
+[100%] Built target selfTest
+----------------------------------------------------------------------
+Executing tests distributed with quiz
+---------------------------------------------------------------------
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from ClassTest
+[ RUN      ] ClassTest.CreateObject
+[       OK ] ClassTest.CreateObject (0 ms)
+[----------] 1 test from ClassTest (0 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (0 ms total)
+[  PASSED  ] 1 test.
+---------------------------------------------------------------------
+---------------------------------------------------------------------
+Part B scored 1
+---------------------------------------------------------------------
