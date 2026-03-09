@@ -6,7 +6,9 @@
 
 
 void populateContainer(std::deque<double>& container, unsigned int num_values, double element){
-
+    for (unsigned int i = 0; i < num_values; ++i) {
+        container.push_front(element);
+    }
 }
 
 
