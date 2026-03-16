@@ -1,0 +1,32 @@
+/*!
+
+*/
+
+// without this gap between two doxygen definition, the last group does not get
+// populated properly for some reason.
+
+/*!
+@mainpage Shape Library
+
+
+The documentation provided covers the use of a shape library, which contains an abstract class \ref Shape and derived classes \ref Rectangle, \ref Circle, and \ref Triangle. Common functionality such as setting and moving the centre of all shapes is contained within the base class \ref Shape. Functionality that differs depending on Shape type is implemented in the derived classes.
+
+An example of using the \ref Shape class to operate on a collection of shapes is in the provided \ref ShapeProcessing class and the shapeprocessing library. The class can iterate through a collection of \ref Shape in a vector of shape pointers, leveraging the functionality of the Shapes.
+
+
+Main Example
+-----------------
+
+The executable provided is named **battleship**, it is as an example of using the libraries, is simulating a game-like process similar to Battleship.
+
+
+The program begins by prompting the user to input the number of circles, triangles, and rectangles to create. It then generates these shapes with a fixed size and adds them to a vector. Each shape is assigned a random center position within a specified range. The user is repeatedly asked to input coordinates, and the program checks if any shapes intersect with the given point. If a shape is hit, it is removed from the collection. The loop continues until all shapes are removed.
+
+<img src="../images/udxpzlbr.gif" style="width:25%;">
+
+
+
+@n By Alen Alempijevic
+@n Alen.Alempijevic@uts.edu.au
+
+*/
