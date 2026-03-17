@@ -9,34 +9,7 @@ Week 5
 * A1 Assistance
 
 ```
-
-At this stage you should have testAudi and testHusky complete
-
-```
-
-* Working through tutorial
-
-
-```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+At this stage you should have testSensor complete
 ```
 
 Week 5 Tutorial Questions
