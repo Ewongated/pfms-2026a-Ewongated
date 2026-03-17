@@ -5,7 +5,7 @@ cmake_minimum_required (VERSION 3.0.0)
 project (quiz2_a)
 
 set(BUILD_TESTS ON) # Enables building tests by default
-set(MARKING_TESTS OFF) # This is off by default, it can be turned ON after the deadline whne marking files are provided
+set(MARKING_TESTS ON) # This is off by default, it can be turned ON after the deadline whne marking files are provided
 
 # Find OpenCV to draw on screen 
 find_package( OpenCV REQUIRED)
