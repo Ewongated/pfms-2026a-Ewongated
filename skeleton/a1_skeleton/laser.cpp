@@ -45,3 +45,14 @@ std::vector<double> Laser::getData()
     }
     return result;
 }
+
+// Setter for angular resolution - Laser supports this setting.
+// Returns false if the requested resolution is not achievable (<=0).
+bool Laser::setAngularResolution(double angularResolution)
+{
+    if (angularResolution <= 0.0) {
+        return false;
+    }
+    angularResolution_ = angularResolution;
+    return true;
+}
