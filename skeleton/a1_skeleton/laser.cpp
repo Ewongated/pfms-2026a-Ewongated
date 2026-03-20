@@ -18,8 +18,11 @@ Laser::Laser(pfms::PlatformType type)
     } else {
         sensorForwardOffset_ = 0.0;
     }
-    sensorLateralOffset_ = 0.0;
+    sensorLateralOffset_  = 0.0;
     sensorVerticalOffset_ = 0.0;  // laser is at platform height
+
+    // Initialise scanAngleMin_ to default -FOV/2 (safe before getData() called)
+    scanAngleMin_ = -fieldOfView_ / 2.0 * M_PI / 180.0;
 
     // Initialise pose to zero so getSensorPose() is safe before getData()
     sensorPose_ = pfms::nav_msgs::Odometry();
@@ -28,21 +31,25 @@ Laser::Laser(pfms::PlatformType type)
 }
 
 // getData() reads a full laser scan from the simulator.
-// Returns a vector of 640 range values (doubles).
+// Returns a vector of range values (doubles).
 // Updates sensorPose_ so getSensorPose() reflects the current reading.
+// Also updates fieldOfView_, angularResolution_, and scanAngleMin_ from
+// the actual scan data so ray angles are correct for any platform.
 std::vector<double> Laser::getData()
 {
-    // First read flushes stale odometry from before teleport
-    pfms::nav_msgs::Odometry platformOdo;
-    connector_->read(platformOdo);
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
-    // Now read the scan — blocks until a fresh scan arrives
     pfms::sensor_msgs::LaserScan scan;
     connector_->read(scan);
 
-    // Read odometry again — now guaranteed to be current
+    pfms::nav_msgs::Odometry platformOdo;
     connector_->read(platformOdo);
     computeSensorPose(platformOdo);
+
+    // Update angular data from actual scan
+    scanAngleMin_      = scan.angle_min;
+    angularResolution_ = scan.angle_increment * 180.0 / M_PI;
+    fieldOfView_       = (scan.angle_max - scan.angle_min) * 180.0 / M_PI;
 
     std::vector<double> result;
     result.reserve(scan.ranges.size());
