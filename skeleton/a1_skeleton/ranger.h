@@ -22,6 +22,7 @@ public:
 protected:
     pfms::PlatformType       platformType_;
     pfms::nav_msgs::Odometry sensorPose_;
+    std::shared_ptr<PfmsConnector> connector_; //!< Persistent connector to avoid timing issues
     double                   angularResolution_;
     double                   fieldOfView_;
     double                   maxRange_;
@@ -29,6 +30,7 @@ protected:
     pfms::RangerType         sensingMethod_;
     double                   sensorForwardOffset_;
     double                   sensorLateralOffset_;
+    double                   sensorVerticalOffset_;
 
     void computeSensorPose(const pfms::nav_msgs::Odometry& platformOdo)
     {
@@ -39,9 +41,12 @@ protected:
         sensorPose_.position.y = platformOdo.position.y
                                 + sensorForwardOffset_ * std::sin(yaw)
                                 + sensorLateralOffset_ * std::cos(yaw);
-        sensorPose_.position.z = platformOdo.position.z;
-        sensorPose_.yaw        = yaw;
+        sensorPose_.position.z = platformOdo.position.z + sensorVerticalOffset_;
         sensorPose_.time       = platformOdo.time;
+        // Normalise yaw to [-pi, pi]
+        while (yaw >  M_PI) yaw -= 2.0 * M_PI;
+        while (yaw < -M_PI) yaw += 2.0 * M_PI;
+        sensorPose_.yaw = yaw;
     }
 };
 

@@ -7,13 +7,11 @@
 
 Fusion::Fusion()
 {
-    // data_ and cells_ start empty
 }
 
 Fusion::Fusion(std::vector<RangerInterface*> rangers)
     : rangers_(rangers)
 {
-    // data_ and cells_ start empty; populated on grabAndFuseData()
 }
 
 // ---------------------------------------------------------------------------
@@ -33,22 +31,17 @@ std::vector<std::vector<double>> Fusion::getRawRangeData()
 void Fusion::grabAndFuseData()
 {
     data_.clear();
-
-    // Acquire data from all sensors
     for (auto ranger : rangers_) {
         data_.push_back(ranger->getData());
     }
-
-    // Fuse each sensor's data against all cells
     for (size_t ri = 0; ri < rangers_.size(); ++ri) {
         RangerInterface* ranger = rangers_.at(ri);
         const std::vector<double>& readings = data_.at(ri);
-
+        // Use pose already updated by getData() - avoids a second blocking read
         pfms::nav_msgs::Odometry pose = ranger->getSensorPose();
         double sx   = pose.position.x;
         double sy   = pose.position.y;
         double syaw = pose.yaw;
-
         if (ranger->getSensingMethod() == pfms::RangerType::POINT) {
             fuseLaser(readings, ranger, sx, sy, syaw);
         } else if (ranger->getSensingMethod() == pfms::RangerType::CONE) {
@@ -58,110 +51,10 @@ void Fusion::grabAndFuseData()
 }
 
 // ---------------------------------------------------------------------------
-// Laser fusion
-// ---------------------------------------------------------------------------
-// The laser sweeps anticlockwise from (syaw - FOV/2) to (syaw + FOV/2).
-// FOV and angular resolution are in degrees - converted to radians here.
-// Only rays that hit an object (range < maxRange) are used:
-//   - endpoint inside cell -> OCCUPIED
-//   - ray passes through cell on way to endpoint -> FREE
-// Rays at maxRange (no detection) leave all cells unchanged.
-// Occupancy takes precedence - OCCUPIED cells are never downgraded.
-// ---------------------------------------------------------------------------
-void Fusion::fuseLaser(const std::vector<double>& readings,
-                        RangerInterface* ranger,
-                        double sx, double sy, double syaw)
-{
-    double fovRad     = ranger->getFieldOfView() * M_PI / 180.0;
-    double angResRad  = ranger->getAngularResolution() * M_PI / 180.0;
-    double startAngle = syaw - fovRad / 2.0;
-    double maxRange   = ranger->getMaxRange();
-    double minRange   = ranger->getMinRange();
-
-    for (size_t i = 0; i < readings.size(); ++i) {
-        double range = readings.at(i);
-        double angle = startAngle + i * angResRad;
-
-        // Discard invalid readings below minimum range
-        if (range < minRange) continue;
-
-        // Clip ray range to world boundary (MAP_SIZE = 10m per cell.h).
-        // The Gazebo world is bounded at +/-MAP_SIZE so rays cannot travel
-        // beyond this boundary. This prevents marking cells outside the world
-        // (e.g. at (11,12)) as FREE when rays cannot physically reach them.
-        double worldBound = pfms::cell::MAP_SIZE;
-        double cosA = std::cos(angle), sinA = std::sin(angle);
-        double boundRange = maxRange;
-        // Compute ray intersection with world boundary box
-        for (int axis = 0; axis < 2; ++axis) {
-            double p  = (axis == 0) ? sx : sy;
-            double d  = (axis == 0) ? cosA : sinA;
-            if (std::abs(d) > 1e-10) {
-                double t1 = (-worldBound - p) / d;
-                double t2 = ( worldBound - p) / d;
-                if (t1 > t2) std::swap(t1, t2);
-                if (t2 > 0.0) boundRange = std::min(boundRange, t2);
-            }
-        }
-        double effectiveRange = std::min(range, boundRange);
-
-        double endX = sx + effectiveRange * std::cos(angle);
-        double endY = sy + effectiveRange * std::sin(angle);
-
-        // Per spec: "if a ray goes through the cell then it is free"
-        // This applies regardless of whether the ray hit an object or reached
-        // the world boundary. Only OCCUPIED requires an actual object hit.
-        bool rayHit = (range < maxRange);
-
-        for (auto cell : cells_) {
-            // Occupancy takes precedence - never downgrade
-            if (cell->getState() == pfms::cell::OCCUPIED) continue;
-
-            if (rayHit && pointInCell(cell, endX, endY)) {
-                // Ray endpoint inside cell - occupied
-                cell->setState(pfms::cell::OCCUPIED);
-            } else if (segmentIntersectsCell(cell, sx, sy, endX, endY)) {
-                // Ray passed through cell (hit or no hit) - free
-                cell->setState(pfms::cell::FREE);
-            }
-        }
-    }
-}
-
-// ---------------------------------------------------------------------------
-// Sonar fusion
-// ---------------------------------------------------------------------------
-// The sonar returns a single range reading for a cone sector.
-// halfFov = FOV/2 in radians (FOV stored in radians for sonar).
-// - If the arc at the measured range overlaps the cell -> OCCUPIED
-// - If the cone sector passes through the cell          -> FREE
-// - If no intersection                                  -> unchanged
-// Occupancy takes precedence.
-// ---------------------------------------------------------------------------
-void Fusion::fuseSonar(const std::vector<double>& readings,
-                        RangerInterface* ranger,
-                        double sx, double sy, double syaw)
-{
-    double halfFov = ranger->getFieldOfView() / 2.0;  // FOV in radians for sonar
-    double range   = readings.at(0);
-
-    for (auto cell : cells_) {
-        if (cell->getState() == pfms::cell::OCCUPIED) continue;
-
-        if (arcEndpointInCell(cell, sx, sy, syaw, halfFov, range)) {
-            // The sonar return arc endpoint lies inside this cell
-            cell->setState(pfms::cell::OCCUPIED);
-        } else if (sectorIntersectsCell(cell, sx, sy, syaw, halfFov, range)) {
-            // The sonar cone passes through this cell
-            cell->setState(pfms::cell::FREE);
-        }
-    }
-}
-
-// ---------------------------------------------------------------------------
 // Geometry helpers
 // ---------------------------------------------------------------------------
 
+// Returns true if point (px,py) is inside cell bounds
 bool Fusion::pointInCell(pfms::Cell* cell, double px, double py)
 {
     double cx, cy;
@@ -171,12 +64,14 @@ bool Fusion::pointInCell(pfms::Cell* cell, double px, double py)
             py >= cy - half && py <= cy + half);
 }
 
-// Slab method AABB intersection test.
-// tmin/tmax parameterize the segment [0,1] where 0=(x1,y1) and 1=(x2,y2).
-// Returns true if the segment crosses the cell rectangle.
+// Slab (AABB) intersection test.
+// Returns true if segment (x1,y1)->(x2,y2) crosses the cell rectangle.
+// Also returns tEntry and tExit - the parametric values [0,1] where the
+// segment enters and exits the cell. tEntry=0 means origin is inside cell.
 bool Fusion::segmentIntersectsCell(pfms::Cell* cell,
                                     double x1, double y1,
-                                    double x2, double y2)
+                                    double x2, double y2,
+                                    double& tEntry, double& tExit)
 {
     double cx, cy;
     cell->getCentre(cx, cy);
@@ -185,33 +80,129 @@ bool Fusion::segmentIntersectsCell(pfms::Cell* cell,
     double xmin = cx - half, xmax = cx + half;
     double ymin = cy - half, ymax = cy + half;
     double dx = x2 - x1, dy = y2 - y1;
-    double tmin = 0.0, tmax = 1.0;
 
+    tEntry = 0.0;
+    tExit  = 1.0;
+
+    // X slab
     if (std::abs(dx) < 1e-10) {
         if (x1 < xmin || x1 > xmax) return false;
     } else {
-        double t1 = (xmin - x1) / dx, t2 = (xmax - x1) / dx;
+        double t1 = (xmin - x1) / dx;
+        double t2 = (xmax - x1) / dx;
         if (t1 > t2) std::swap(t1, t2);
-        tmin = std::max(tmin, t1);
-        tmax = std::min(tmax, t2);
-        if (tmin > tmax) return false;
+        tEntry = std::max(tEntry, t1);
+        tExit  = std::min(tExit,  t2);
+        if (tEntry > tExit) return false;
     }
 
+    // Y slab
     if (std::abs(dy) < 1e-10) {
         if (y1 < ymin || y1 > ymax) return false;
     } else {
-        double t1 = (ymin - y1) / dy, t2 = (ymax - y1) / dy;
+        double t1 = (ymin - y1) / dy;
+        double t2 = (ymax - y1) / dy;
         if (t1 > t2) std::swap(t1, t2);
-        tmin = std::max(tmin, t1);
-        tmax = std::min(tmax, t2);
-        if (tmin > tmax) return false;
+        tEntry = std::max(tEntry, t1);
+        tExit  = std::min(tExit,  t2);
+        if (tEntry > tExit) return false;
     }
 
     return true;
 }
 
-// Test if point (px,py) lies within the sonar cone sector:
-// origin (sx,sy), pointing sensorYaw, half-angle halfFov, radius range.
+// ---------------------------------------------------------------------------
+// Laser fusion
+// ---------------------------------------------------------------------------
+// For each ray (clamping inf/NaN to maxRange so free space is captured):
+//   1. Check if ray passes through cell (segment intersection)
+//   2. If yes, check where endpoint is relative to cell:
+//      - tExit >= 1.0: endpoint inside cell -> OCCUPIED (always wins)
+//      - tExit <  1.0: ray exited far side  -> FREE (only if not OCCUPIED)
+// ---------------------------------------------------------------------------
+void Fusion::fuseLaser(const std::vector<double>& readings,
+                        RangerInterface* ranger,
+                        double sx, double sy, double syaw)
+{
+    double fovRad    = ranger->getFieldOfView() * M_PI / 180.0;
+    double angResRad = ranger->getAngularResolution() * M_PI / 180.0;
+    double startAngle = syaw - fovRad / 2.0;
+    double minRange   = ranger->getMinRange();
+    double maxRange   = ranger->getMaxRange();
+
+    for (size_t i = 0; i < readings.size(); ++i) {
+        double range = readings.at(i);
+
+        // Clamp inf/NaN to maxRange — ray still sweeps free space out to maxRange
+        if (!std::isfinite(range) || range > maxRange) range = maxRange;
+        if (range < minRange) continue;
+
+        double angle = startAngle + i * angResRad;
+        double endX  = sx + range * std::cos(angle);
+        double endY  = sy + range * std::sin(angle);
+
+        for (auto cell : cells_) {
+            double tEntry, tExit;
+            if (!segmentIntersectsCell(cell, sx, sy, endX, endY, tEntry, tExit))
+                continue;
+
+            if (tExit < 1.0 - 1e-9) {
+                // Ray passed completely through cell -> FREE (only if not already OCCUPIED)
+                if (cell->getState() != pfms::cell::OCCUPIED)
+                    cell->setState(pfms::cell::FREE);
+            } else {
+                // Ray endpoint is inside cell -> OCCUPIED (always wins)
+                cell->setState(pfms::cell::OCCUPIED);
+            }
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Sonar fusion
+// ---------------------------------------------------------------------------
+// Same logic as laser but applied to the cone sector:
+//   1. No readings -> no change
+//   2. Check if cone passes through cell
+//   3. If yes, check where arc endpoint is relative to cell:
+//      - Arc endpoint inside cell -> OCCUPIED (always wins)
+//      - Arc endpoint past cell   -> FREE (only if not OCCUPIED)
+//      - Arc endpoint before cell -> no change
+// ---------------------------------------------------------------------------
+void Fusion::fuseSonar(const std::vector<double>& readings,
+                        RangerInterface* ranger,
+                        double sx, double sy, double syaw)
+{
+    // No readings -> no change
+    if (readings.empty()) return;
+
+    double range = readings.at(0);
+    if (!std::isfinite(range) || range < ranger->getMinRange()) return;
+
+    double halfFov = ranger->getFieldOfView() / 2.0;  // FOV in radians for sonar
+
+    for (auto cell : cells_) {
+        // Check if any part of the cone sector intersects the cell
+        if (!sectorIntersectsCell(cell, sx, sy, syaw, halfFov, range)) continue;
+
+        // Cone intersects cell - check where arc endpoint is
+        if (arcEndpointInCell(cell, sx, sy, syaw, halfFov, range)) {
+            // Arc endpoint inside cell -> OCCUPIED (always wins)
+            cell->setState(pfms::cell::OCCUPIED);
+        } else if (arcEndpointPastCell(cell, sx, sy, syaw, halfFov, range)) {
+            // Arc endpoint past cell -> FREE (only if not already OCCUPIED)
+            if (cell->getState() != pfms::cell::OCCUPIED)
+                cell->setState(pfms::cell::FREE);
+        }
+        // else arc endpoint before cell -> no change
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Sonar geometry helpers
+// ---------------------------------------------------------------------------
+
+// Test if point (px,py) lies within the sonar cone sector
 bool Fusion::pointInSector(double sx, double sy, double sensorYaw,
                             double halfFov, double range,
                             double px, double py)
@@ -219,19 +210,14 @@ bool Fusion::pointInSector(double sx, double sy, double sensorYaw,
     double dx = px - sx, dy = py - sy;
     double dist = std::sqrt(dx * dx + dy * dy);
     if (dist > range) return false;
-
     double angle = std::atan2(dy, dx);
     double diff  = angle - sensorYaw;
-    // Normalise diff to [-pi, pi]
     while (diff >  M_PI) diff -= 2.0 * M_PI;
     while (diff < -M_PI) diff += 2.0 * M_PI;
-
     return std::abs(diff) <= halfFov;
 }
 
-// Check if the sonar sector intersects a cell (used for FREE marking).
-// Tests all 4 corners + centre of cell against sector,
-// and the two bounding rays of the cone against the cell rectangle.
+// Check if sonar sector intersects cell (tests corners, centre, bounding rays)
 bool Fusion::sectorIntersectsCell(pfms::Cell* cell,
                                    double sx, double sy, double sensorYaw,
                                    double halfFov, double range)
@@ -240,29 +226,29 @@ bool Fusion::sectorIntersectsCell(pfms::Cell* cell,
     cell->getCentre(cx, cy);
     double half = cell->getSide() / 2.0;
 
+    // Test 4 corners and centre
     double testX[5] = { cx-half, cx+half, cx-half, cx+half, cx };
     double testY[5] = { cy-half, cy-half, cy+half, cy+half, cy };
-
     for (int i = 0; i < 5; ++i) {
         if (pointInSector(sx, sy, sensorYaw, halfFov, range, testX[i], testY[i]))
             return true;
     }
 
-    // Test the two bounding rays of the cone
-    double ray1x = sx + range * std::cos(sensorYaw - halfFov);
-    double ray1y = sy + range * std::sin(sensorYaw - halfFov);
-    double ray2x = sx + range * std::cos(sensorYaw + halfFov);
-    double ray2y = sy + range * std::sin(sensorYaw + halfFov);
+    // Test two bounding rays of cone
+    double tEntry, tExit;
+    double r1x = sx + range * std::cos(sensorYaw - halfFov);
+    double r1y = sy + range * std::sin(sensorYaw - halfFov);
+    double r2x = sx + range * std::cos(sensorYaw + halfFov);
+    double r2y = sy + range * std::sin(sensorYaw + halfFov);
 
-    if (segmentIntersectsCell(cell, sx, sy, ray1x, ray1y)) return true;
-    if (segmentIntersectsCell(cell, sx, sy, ray2x, ray2y)) return true;
+    if (segmentIntersectsCell(cell, sx, sy, r1x, r1y, tEntry, tExit)) return true;
+    if (segmentIntersectsCell(cell, sx, sy, r2x, r2y, tEntry, tExit)) return true;
 
     return false;
 }
 
-// Check if the sonar arc endpoint (at measured range) overlaps a cell.
-// Samples the arc at fine increments (~0.1 degree steps).
-// Used for OCCUPIED marking.
+// Check if the sonar arc endpoint (at measured range) lands inside the cell.
+// Samples arc at fine angular increments.
 bool Fusion::arcEndpointInCell(pfms::Cell* cell,
                                 double sx, double sy, double sensorYaw,
                                 double halfFov, double range)
@@ -277,11 +263,28 @@ bool Fusion::arcEndpointInCell(pfms::Cell* cell,
     return false;
 }
 
+// Check if the sonar arc endpoint is past the cell (FREE condition).
+// The arc endpoint is "past" the cell if the cone passes through the cell
+// but the arc (at measured range) is beyond the cell's far edge from sensor.
+bool Fusion::arcEndpointPastCell(pfms::Cell* cell,
+                                  double sx, double sy, double sensorYaw,
+                                  double halfFov, double range)
+{
+    double cx, cy;
+    cell->getCentre(cx, cy);
+    double dx   = cx - sx, dy = cy - sy;
+    double dist = std::sqrt(dx * dx + dy * dy);
+    double half = cell->getSide() / 2.0;
+
+    // Arc endpoint is past cell if measured range exceeds far edge of cell
+    return range > (dist + half);
+}
+
 // ---------------------------------------------------------------------------
 // getObjectDentre
 // ---------------------------------------------------------------------------
-// Uses POINT sensors only. Clusters consecutive laser hits (range < maxRange)
-// by spatial proximity. Returns centroid of each cluster as {x, y, z, ...}.
+// Uses POINT sensors only. Clusters consecutive laser hits by spatial
+// proximity and returns centroid of each cluster as {x, y, z, ...}.
 // ---------------------------------------------------------------------------
 std::vector<double> Fusion::getObjectDentre()
 {
@@ -294,19 +297,17 @@ std::vector<double> Fusion::getObjectDentre()
 
         const std::vector<double>& readings = data_.at(ri);
         pfms::nav_msgs::Odometry pose = ranger->getSensorPose();
-        double sx   = pose.position.x;
-        double sy   = pose.position.y;
-        double syaw = pose.yaw;
+        double sx    = pose.position.x;
+        double sy    = pose.position.y;
+        double syaw  = pose.yaw;
 
-        double fovRad     = ranger->getFieldOfView() * M_PI / 180.0;
-        double angResRad  = ranger->getAngularResolution() * M_PI / 180.0;
+        double fovRad    = ranger->getFieldOfView() * M_PI / 180.0;
+        double angResRad = ranger->getAngularResolution() * M_PI / 180.0;
         double startAngle = syaw - fovRad / 2.0;
         double maxRange   = ranger->getMaxRange();
         double minRange   = ranger->getMinRange();
 
-        // Max spatial gap between points in same cluster [m]
         const double clusterThreshold = 0.5;
-
         std::vector<std::pair<double,double>> cluster;
 
         auto flushCluster = [&]() {
@@ -326,7 +327,7 @@ std::vector<double> Fusion::getObjectDentre()
             double range = readings.at(i);
             double angle = startAngle + i * angResRad;
 
-            if (range < minRange || range >= maxRange) {
+            if (!std::isfinite(range) || range < minRange || range >= maxRange) {
                 flushCluster();
                 continue;
             }
@@ -351,11 +352,6 @@ std::vector<double> Fusion::getObjectDentre()
 // ---------------------------------------------------------------------------
 // getScanningArea
 // ---------------------------------------------------------------------------
-// Returns the total scanning area [m^2] covered by all sensors.
-// For POINT sensors: area of the arc swept = 0.5 * r^2 * FOV (in radians).
-// For CONE sensors:  area of the cone sector = 0.5 * r^2 * FOV (in radians).
-// Uses the maximum range of each sensor as r.
-// ---------------------------------------------------------------------------
 double Fusion::getScanningArea()
 {
     double totalArea = 0.0;
@@ -363,10 +359,8 @@ double Fusion::getScanningArea()
         double r   = ranger->getMaxRange();
         double fov = 0.0;
         if (ranger->getSensingMethod() == pfms::RangerType::POINT) {
-            // FOV stored in degrees for laser
             fov = ranger->getFieldOfView() * M_PI / 180.0;
         } else {
-            // FOV stored in radians for sonar
             fov = ranger->getFieldOfView();
         }
         totalArea += 0.5 * r * r * fov;

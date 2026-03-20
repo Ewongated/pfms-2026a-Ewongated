@@ -19,9 +19,12 @@ Laser::Laser(pfms::PlatformType type)
         sensorForwardOffset_ = 0.0;
     }
     sensorLateralOffset_ = 0.0;
+    sensorVerticalOffset_ = 0.0;  // laser is at platform height
 
     // Initialise pose to zero so getSensorPose() is safe before getData()
     sensorPose_ = pfms::nav_msgs::Odometry();
+    // Create persistent connector so subscriptions are ready when getData() called
+    connector_ = std::make_shared<PfmsConnector>(platformType_);
 }
 
 // getData() reads a full laser scan from the simulator.
@@ -29,14 +32,17 @@ Laser::Laser(pfms::PlatformType type)
 // Updates sensorPose_ so getSensorPose() reflects the current reading.
 std::vector<double> Laser::getData()
 {
-    PfmsConnector connector(platformType_);
-
+    // First read flushes stale odometry from before teleport
     pfms::nav_msgs::Odometry platformOdo;
-    connector.read(platformOdo);
-    computeSensorPose(platformOdo);  // updates sensorPose_
+    connector_->read(platformOdo);
 
+    // Now read the scan — blocks until a fresh scan arrives
     pfms::sensor_msgs::LaserScan scan;
-    connector.read(scan);
+    connector_->read(scan);
+
+    // Read odometry again — now guaranteed to be current
+    connector_->read(platformOdo);
+    computeSensorPose(platformOdo);
 
     std::vector<double> result;
     result.reserve(scan.ranges.size());
