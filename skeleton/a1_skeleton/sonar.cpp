@@ -19,9 +19,12 @@ Sonar::Sonar(pfms::PlatformType type)
         sensorForwardOffset_ = 0.0;
     }
     sensorLateralOffset_ = 0.0;
+    sensorVerticalOffset_ = 0.2;  // sonar is 0.2m above laser
 
     // Initialise pose to zero so getSensorPose() is safe before getData()
     sensorPose_ = pfms::nav_msgs::Odometry();
+    // Create persistent connector so subscriptions are ready when getData() called
+    connector_ = std::make_shared<PfmsConnector>(platformType_);
 }
 
 // getData() reads one sonar measurement from the simulator.
@@ -29,14 +32,14 @@ Sonar::Sonar(pfms::PlatformType type)
 // Updates sensorPose_ so getSensorPose() reflects the current reading.
 std::vector<double> Sonar::getData()
 {
-    PfmsConnector connector(platformType_);
-
     pfms::nav_msgs::Odometry platformOdo;
-    connector.read(platformOdo);
-    computeSensorPose(platformOdo);  // updates sensorPose_
+    connector_->read(platformOdo);  // flush stale
 
     pfms::sensor_msgs::Sonar sonarData;
-    connector.read(sonarData);
+    connector_->read(sonarData);    // fresh sensor read
+
+    connector_->read(platformOdo);  // fresh odometry
+    computeSensorPose(platformOdo);
 
     std::vector<double> result;
     result.push_back(static_cast<double>(sonarData.range));
