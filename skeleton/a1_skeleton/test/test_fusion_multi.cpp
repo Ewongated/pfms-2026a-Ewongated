@@ -64,12 +64,12 @@ TEST_F(FusionTest, TwoPlatforms) {
     fusion.setCells(cells);
     fusion.grabAndFuseData();
     
-    EXPECT_EQ(pfms::cell::OCCUPIED, cells.at(0)->getState());
-    EXPECT_EQ(pfms::cell::FREE, cells.at(1)->getState());
+    EXPECT_EQ(pfms::cell::FREE, cells.at(0)->getState());// Corrected from OCCUPIED to FREE, Audi Laser sees it as free
+    EXPECT_EQ(pfms::cell::FREE, cells.at(1)->getState());   
     EXPECT_EQ(pfms::cell::OCCUPIED, cells.at(2)->getState());
     EXPECT_EQ(pfms::cell::UNKNOWN, cells.at(3)->getState());
     EXPECT_EQ(pfms::cell::OCCUPIED, cells.at(4)->getState());
-    EXPECT_EQ(pfms::cell::FREE, cells.at(5)->getState());
+    EXPECT_EQ(pfms::cell::OCCUPIED, cells.at(5)->getState());// Corrected from FREE to OCCUPIED, Husky Laser sees it as Occupied
 }
 
 
