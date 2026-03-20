@@ -1,4 +1,5 @@
 #include "fusion.h"
+#include "ranger.h"
 #include <cmath>
 
 // ---------------------------------------------------------------------------
@@ -124,11 +125,19 @@ void Fusion::fuseLaser(const std::vector<double>& readings,
                         RangerInterface* ranger,
                         double sx, double sy, double syaw)
 {
-    double fovRad    = ranger->getFieldOfView() * M_PI / 180.0;
     double angResRad = ranger->getAngularResolution() * M_PI / 180.0;
-    double startAngle = syaw - fovRad / 2.0;
-    double minRange   = ranger->getMinRange();
-    double maxRange   = ranger->getMaxRange();
+    double minRange  = ranger->getMinRange();
+    double maxRange  = ranger->getMaxRange();
+
+    // Use actual scan angle_min if available (via Ranger subclass),
+    // otherwise fall back to symmetric -FOV/2
+    double startAngle;
+    Ranger* r = dynamic_cast<Ranger*>(ranger);
+    if (r) {
+        startAngle = syaw + r->getAngleMin();
+    } else {
+        startAngle = syaw - ranger->getFieldOfView() * M_PI / 180.0 / 2.0;
+    }
 
     for (size_t i = 0; i < readings.size(); ++i) {
         double range = readings.at(i);
@@ -301,11 +310,17 @@ std::vector<double> Fusion::getObjectDentre()
         double sy    = pose.position.y;
         double syaw  = pose.yaw;
 
-        double fovRad    = ranger->getFieldOfView() * M_PI / 180.0;
         double angResRad = ranger->getAngularResolution() * M_PI / 180.0;
-        double startAngle = syaw - fovRad / 2.0;
-        double maxRange   = ranger->getMaxRange();
-        double minRange   = ranger->getMinRange();
+        double maxRange  = ranger->getMaxRange();
+        double minRange  = ranger->getMinRange();
+
+        double startAngle;
+        Ranger* r = dynamic_cast<Ranger*>(ranger);
+        if (r) {
+            startAngle = syaw + r->getAngleMin();
+        } else {
+            startAngle = syaw - ranger->getFieldOfView() * M_PI / 180.0 / 2.0;
+        }
 
         const double clusterThreshold = 0.5;
         std::vector<std::pair<double,double>> cluster;

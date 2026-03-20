@@ -16,6 +16,9 @@ public:
     double                   getMinRange()          override;
     pfms::RangerType         getSensingMethod()     override;
 
+    //! Returns the scan's angle_min relative to sensor heading [rad]
+    double getAngleMin() { return scanAngleMin_; }
+
     // getData() remains pure virtual - each sensor reads different data
     virtual std::vector<double> getData() = 0;
 
@@ -31,6 +34,7 @@ protected:
     double                   sensorForwardOffset_;
     double                   sensorLateralOffset_;
     double                   sensorVerticalOffset_;
+    double                   scanAngleMin_ = 0.0;  //!< angle_min from actual scan [rad]
 
     void computeSensorPose(const pfms::nav_msgs::Odometry& platformOdo)
     {
