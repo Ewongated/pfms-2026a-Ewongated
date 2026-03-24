@@ -5,9 +5,9 @@ Sonar::Sonar(pfms::PlatformType type)
 {
     platformType_      = type;
     angularResolution_ = 0.0;
-    fieldOfView_       = 0.052;  // [rad] ~3 degrees
-    maxRange_          = 20.0;   // [m]
-    minRange_          = 0.02;   // [m]
+    fieldOfView_       = 0.052;  
+    maxRange_          = 20.0;   
+    minRange_          = 0.02;   
     sensingMethod_     = pfms::RangerType::CONE;
 
     // Sensor offset depends on platform:
@@ -19,11 +19,11 @@ Sonar::Sonar(pfms::PlatformType type)
         sensorForwardOffset_ = 0.0;
     }
     sensorLateralOffset_ = 0.0;
-    sensorVerticalOffset_ = 0.2;  // sonar is 0.2m above laser
+    sensorVerticalOffset_ = 0.2;  
 
-    // Initialise pose to zero so getSensorPose() is safe before getData()
+    // Initialise pose to default
     sensorPose_ = pfms::nav_msgs::Odometry();
-    // Create persistent connector so subscriptions are ready when getData() called
+
     connector_ = std::make_shared<PfmsConnector>(platformType_);
 }
 

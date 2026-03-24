@@ -4,7 +4,7 @@
 #include "pfms_types.h"
 #include "pfmsconnector.h"
 #include <cmath>
-
+//Handles repeat functions between laser and sonar
 class Ranger : public RangerInterface
 {
 public:
@@ -25,7 +25,7 @@ public:
 protected:
     pfms::PlatformType       platformType_;
     pfms::nav_msgs::Odometry sensorPose_;
-    std::shared_ptr<PfmsConnector> connector_; //!< Persistent connector to avoid timing issues
+    std::shared_ptr<PfmsConnector> connector_; 
     double                   angularResolution_;
     double                   fieldOfView_;
     double                   maxRange_;
@@ -36,6 +36,7 @@ protected:
     double                   sensorVerticalOffset_;
     double                   scanAngleMin_ = 0.0;  //!< angle_min from actual scan [rad]
 
+    //sensor pose
     void computeSensorPose(const pfms::nav_msgs::Odometry& platformOdo)
     {
         double yaw = platformOdo.yaw;
@@ -47,7 +48,8 @@ protected:
                                 + sensorLateralOffset_ * std::cos(yaw);
         sensorPose_.position.z = platformOdo.position.z + sensorVerticalOffset_;
         sensorPose_.time       = platformOdo.time;
-        // Normalise yaw to [-pi, pi]
+        
+        // Normalise yaw to [-pi, pi] - Recommended in FAQ I think
         while (yaw >  M_PI) yaw -= 2.0 * M_PI;
         while (yaw < -M_PI) yaw += 2.0 * M_PI;
         sensorPose_.yaw = yaw;

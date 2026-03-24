@@ -1,7 +1,7 @@
 #ifndef LASER_H
 #define LASER_H
 #include "ranger.h"
-
+//Read Data
 class Laser : public Ranger
 {
 public:

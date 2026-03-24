@@ -2,6 +2,7 @@
 #define SONAR_H
 #include "ranger.h"
 
+//Read Data
 class Sonar : public Ranger
 {
 public:
