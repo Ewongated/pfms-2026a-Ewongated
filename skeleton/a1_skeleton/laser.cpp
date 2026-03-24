@@ -19,13 +19,14 @@ Laser::Laser(pfms::PlatformType type)
         sensorForwardOffset_ = 0.0;
     }
     sensorLateralOffset_  = 0.0;
-    sensorVerticalOffset_ = 0.0;  // laser is at platform height
+    sensorVerticalOffset_ = 0.0;
 
-    // Initialise scanAngleMin_ to default -FOV/2 (safe before getData() called)
+    // Initialise scanAngleMin_ to default
     scanAngleMin_ = -fieldOfView_ / 2.0 * M_PI / 180.0;
 
-    // Initialise pose to zero so getSensorPose() is safe before getData()
+    // Initialise pose to default
     sensorPose_ = pfms::nav_msgs::Odometry();
+    
     // Create persistent connector so subscriptions are ready when getData() called
     connector_ = std::make_shared<PfmsConnector>(platformType_);
 }
