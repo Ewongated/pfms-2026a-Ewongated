@@ -2,10 +2,6 @@
 #include "ranger.h"
 #include <cmath>
 
-// ---------------------------------------------------------------------------
-// Constructors
-// ---------------------------------------------------------------------------
-
 Fusion::Fusion()
 {
 }
@@ -14,10 +10,6 @@ Fusion::Fusion(std::vector<RangerInterface*> rangers)
     : rangers_(rangers)
 {
 }
-
-// ---------------------------------------------------------------------------
-// Interface methods
-// ---------------------------------------------------------------------------
 
 void Fusion::setCells(std::vector<pfms::Cell*> cells)
 {
@@ -29,6 +21,7 @@ std::vector<std::vector<double>> Fusion::getRawRangeData()
     return data_;
 }
 
+//Take Data and send to either fuseLaser or fuseSonar - Sort type
 void Fusion::grabAndFuseData()
 {
     data_.clear();
@@ -38,7 +31,6 @@ void Fusion::grabAndFuseData()
     for (size_t ri = 0; ri < rangers_.size(); ++ri) {
         RangerInterface* ranger = rangers_.at(ri);
         const std::vector<double>& readings = data_.at(ri);
-        // Use pose already updated by getData() - avoids a second blocking read
         pfms::nav_msgs::Odometry pose = ranger->getSensorPose();
         double sx   = pose.position.x;
         double sy   = pose.position.y;
@@ -51,11 +43,7 @@ void Fusion::grabAndFuseData()
     }
 }
 
-// ---------------------------------------------------------------------------
-// Geometry helpers
-// ---------------------------------------------------------------------------
-
-// Returns true if point (px,py) is inside cell bounds
+// Returns true if point (px,py) is inside cell bounds - Check endpoint
 bool Fusion::pointInCell(pfms::Cell* cell, double px, double py)
 {
     double cx, cy;
@@ -112,15 +100,14 @@ bool Fusion::segmentIntersectsCell(pfms::Cell* cell,
     return true;
 }
 
-// ---------------------------------------------------------------------------
+
 // Laser fusion
-// ---------------------------------------------------------------------------
 // For each ray (clamping inf/NaN to maxRange so free space is captured):
 //   1. Check if ray passes through cell (segment intersection)
 //   2. If yes, check where endpoint is relative to cell:
 //      - tExit >= 1.0: endpoint inside cell -> OCCUPIED (always wins)
 //      - tExit <  1.0: ray exited far side  -> FREE (only if not OCCUPIED)
-// ---------------------------------------------------------------------------
+
 void Fusion::fuseLaser(const std::vector<double>& readings,
                         RangerInterface* ranger,
                         double sx, double sy, double syaw)
@@ -142,7 +129,7 @@ void Fusion::fuseLaser(const std::vector<double>& readings,
     for (size_t i = 0; i < readings.size(); ++i) {
         double range = readings.at(i);
 
-        // Clamp inf/NaN to maxRange — ray still sweeps free space out to maxRange
+        // Clamp inf/NaN to maxRange — inf gives information up to maxRange of scanner
         if (!std::isfinite(range) || range > maxRange) range = maxRange;
         if (range < minRange) continue;
 
@@ -167,9 +154,8 @@ void Fusion::fuseLaser(const std::vector<double>& readings,
     }
 }
 
-// ---------------------------------------------------------------------------
+
 // Sonar fusion
-// ---------------------------------------------------------------------------
 // Same logic as laser but applied to the cone sector:
 //   1. No readings -> no change
 //   2. Check if cone passes through cell
@@ -177,7 +163,7 @@ void Fusion::fuseLaser(const std::vector<double>& readings,
 //      - Arc endpoint inside cell -> OCCUPIED (always wins)
 //      - Arc endpoint past cell   -> FREE (only if not OCCUPIED)
 //      - Arc endpoint before cell -> no change
-// ---------------------------------------------------------------------------
+
 void Fusion::fuseSonar(const std::vector<double>& readings,
                         RangerInterface* ranger,
                         double sx, double sy, double syaw)
@@ -207,9 +193,6 @@ void Fusion::fuseSonar(const std::vector<double>& readings,
     }
 }
 
-// ---------------------------------------------------------------------------
-// Sonar geometry helpers
-// ---------------------------------------------------------------------------
 
 // Test if point (px,py) lies within the sonar cone sector
 bool Fusion::pointInSector(double sx, double sy, double sensorYaw,
@@ -289,13 +272,8 @@ bool Fusion::arcEndpointPastCell(pfms::Cell* cell,
     return range > (dist + half);
 }
 
-// ---------------------------------------------------------------------------
-// getObjectDentre
-// ---------------------------------------------------------------------------
-// Uses POINT sensors only. Clusters consecutive laser hits by spatial
-// proximity and returns centroid of each cluster as {x, y, z, ...}.
-// ---------------------------------------------------------------------------
-std::vector<double> Fusion::getObjectDentre()
+//Converts laser to cartesian for point checking
+std::vector<double> Fusion::getObjectCentre()
 {
     std::vector<double> centres;
 

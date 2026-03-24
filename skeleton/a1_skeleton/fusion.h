@@ -29,7 +29,7 @@ public:
     void setCells(std::vector<pfms::Cell*> cells) override;
     void grabAndFuseData() override;
     std::vector<std::vector<double>> getRawRangeData() override;
-    std::vector<double> getObjectDentre() override;
+    std::vector<double> getObjectCentre() override;
 
     //! Returns total scanning area [m^2] across all sensors (not in FusionInterface)
     double getScanningArea();
