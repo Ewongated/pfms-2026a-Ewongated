@@ -8,5 +8,6 @@
     "python.analysis.extraPaths": [
         "/opt/ros/humble/lib/python3.10/site-packages",
         "/opt/ros/humble/local/lib/python3.10/dist-packages"
-    ]
+    ],
+    "cmake.sourceDirectory": "/home/student/ros2_ws/src/pfms-2026a-Ewongated/skeleton/a1_skeleton"
 }
