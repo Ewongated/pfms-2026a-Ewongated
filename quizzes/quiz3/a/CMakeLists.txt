@@ -5,7 +5,7 @@ cmake_minimum_required (VERSION 3.0.0)
 project (quiz3_a)
 
 set(BUILD_TESTS ON) # This switch here sets the tests on automatically
-set(MARKING_TESTS OFF) # You can enable this switch to run the marking tests after the deadline and when they are desposited
+set(MARKING_TESTS ON) # You can enable this switch to run the marking tests after the deadline and when they are desposited
 
 include(${CMAKE_SOURCE_DIR}/dep/FindSimulator.cmake)
 
