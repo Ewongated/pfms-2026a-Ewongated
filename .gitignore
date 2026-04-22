@@ -1,8 +1,12 @@
 # --------------------------------------
 # Build / Install / Logs (ROS 2 + colcon)
 # --------------------------------------
+.vscode/
+*.db
+build/
 build/
 *-build/
+.vscode/
 build-*/
 /build/
 /install/
