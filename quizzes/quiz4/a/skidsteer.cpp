@@ -21,23 +21,17 @@ Skidsteer::Skidsteer() :
     MAX_LINEAR_SPEED(2.0),
     MAX_ANGULAR_SPEED(1.0),
     seq_(0),
+    distanceTravelled_(0.0),   // TASK 1
+    timeInMotion_(0.0),        // TASK 1
+    goalSet_(false),           // TASK 1
     running_(false)
 {
-    // Is this the best polace to set the platform type? Why? 
-    type_ = pfms::PlatformType::SKIDSTEER; //Type is skidsteer
-
-    // We create a pointer to the PfmConnector here in the constructor, so we can OPEN connection ONLY once
+    type_ = pfms::PlatformType::SKIDSTEER;
     pfmsConnectorPtr_ = std::make_shared<PfmsConnector>(type_);
-
-    // We create a pointer to the LaserProcessing object here in the constructor, so we can OPEN connection ONLY once
     laserProcessingPtr_ = std::make_unique<LaserProcessing>(pfmsConnectorPtr_);
-
-    std::this_thread::sleep_for (std::chrono::milliseconds(50));
-
-    running_=true;
-
-    // We start the thread in the constructor, as we want it to be running while the platform is on
-    thread_ = new std::thread(&Skidsteer::reachGoal,this);
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    running_ = true;
+    thread_ = new std::thread(&Skidsteer::reachGoal, this);
 }
 
 
@@ -54,52 +48,133 @@ Skidsteer::~Skidsteer(){
 
 }
 
-bool Skidsteer::execute(bool start){
-
-    // We should only start the execution if we have goals to pursue and start is set to true
-    // How would you activate the thread to pursue the goals when start is set to true?
-
+bool Skidsteer::execute(bool start) {
+    if (start) {
+        std::unique_lock<std::mutex> lck(mtxGoals_);
+        if (goals_.empty()) return false;
+        status_ = pfms::PlatformStatus::RUNNING;
+        lck.unlock();
+        cv_.notify_all();   // wake reachGoal thread
+    } else {
+        status_ = pfms::PlatformStatus::IDLE;
+        sendCmd(0, 0);      // stop the platform
+    }
     return true;
 }
 
-
 bool Skidsteer::setGoals(std::vector<pfms::geometry_msgs::Point> goals) {
+    std::unique_lock<std::mutex> lck(mtxGoals_);
+    goals_.clear();
+    currentGoalIdx_ = 0;
 
-    std::unique_lock lck(mtxGoals_);
-    goals_.clear();//We empty the goals
-    bool OK=true;
-    bool start=true;
-    pfms::nav_msgs::Odometry estimatedGoalPose;
-    GoalStats goal;
-    for(auto g:goals){
-        goal.location = g;
+    pfms::nav_msgs::Odometry odo = getOdometry();
+    pfms::nav_msgs::Odometry estimatedPose;
+    pfms::nav_msgs::Odometry origin = odo;
 
-        //! @todo
-        //! We can use the checkOriginToDestination function to populate the distance and time to goal
-        // and also to check if the goal is reachable or not
-        goal.distance = -1;
-        goal.time = -1;
-
-        goals_.push_back(goal);
+    bool allReachable = true;
+    for (auto& g : goals) {
+        GoalStats gs;
+        gs.location = g;
+        double dist, time;
+        bool ok = checkOriginToDestination(origin, g, dist, time, estimatedPose);
+        gs.distance = ok ? dist : -1;
+        gs.time     = ok ? time : -1;
+        if (!ok) allReachable = false;
+        goals_.push_back(gs);
+        origin = estimatedPose;   // chain goals sequentially
     }
-    
-    lck.unlock();
-
-    return true;
+    return allReachable;
 }
 
 void Skidsteer::reachGoal(void) {
+    while (running_.load()) {
 
-    GoalStats goal;
-    while(running_.load()){
+        // Wait until execute(true) is called and goals exist
+        {
+            std::unique_lock<std::mutex> lck(mtxGoals_);
+            cv_.wait(lck, [this] {
+                return !running_.load() ||
+                       (status_ == pfms::PlatformStatus::RUNNING && !goals_.empty());
+            });
+        }
 
-        //! @todo  This thread is active now (as we start it in the constructor)
-        // But we should make it wait until we have goals to pursue and the execute function is called
-        // We can use a condition variable for this
-        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+        if (!running_.load()) break;
 
+        // Work through goals one at a time
+        while (running_.load() && status_ == pfms::PlatformStatus::RUNNING) {
+
+            GoalStats goal;
+            {
+                std::unique_lock<std::mutex> lck(mtxGoals_);
+                if (currentGoalIdx_ >= goals_.size()) {
+                    status_ = pfms::PlatformStatus::IDLE;
+                    sendCmd(0, 0);
+                    break;
+                }
+                goal = goals_.at(currentGoalIdx_);
+            }
+
+            // --- Control loop: rotate then drive ---
+            auto lastTime = std::chrono::steady_clock::now();
+            pfms::nav_msgs::Odometry lastOdo = getOdometry();
+
+            while (running_.load() && status_ == pfms::PlatformStatus::RUNNING) {
+
+                pfms::nav_msgs::Odometry odo = getOdometry();
+
+                // Track distance and time
+                auto now = std::chrono::steady_clock::now();
+                double dt = std::chrono::duration<double>(now - lastTime).count();
+                lastTime = now;
+
+                double dStep = std::hypot(odo.position.x - lastOdo.position.x,
+                                          odo.position.y - lastOdo.position.y);
+                distanceTravelled_ += dStep;
+                timeInMotion_      += dt;
+                lastOdo = odo;
+
+                // Update goal distance/time estimates
+                {
+                    std::unique_lock<std::mutex> lck(mtxGoals_);
+                    double dx = goals_.at(currentGoalIdx_).location.x - odo.position.x;
+                    double dy = goals_.at(currentGoalIdx_).location.y - odo.position.y;
+                    goals_.at(currentGoalIdx_).distance = std::hypot(dx, dy);
+                    goals_.at(currentGoalIdx_).time =
+                        goals_.at(currentGoalIdx_).distance / MAX_LINEAR_SPEED;
+                }
+
+                // Check if goal reached
+                if (goalReached()) {
+                    sendCmd(0, 0);
+                    std::unique_lock<std::mutex> lck(mtxGoals_);
+                    currentGoalIdx_++;
+                    break;
+                }
+
+                // Compute desired heading to goal
+                double dx = goal.location.x - odo.position.x;
+                double dy = goal.location.y - odo.position.y;
+                double desiredYaw = std::atan2(dy, dx);
+                double yawErr = desiredYaw - odo.yaw;
+                // Normalise to [-pi, pi]
+                yawErr = std::atan2(std::sin(yawErr), std::cos(yawErr));
+
+                // Proportional controller
+                double angular = std::max(-MAX_ANGULAR_SPEED,
+                                 std::min(MAX_ANGULAR_SPEED, 1.5 * yawErr));
+
+                // Only drive forward once roughly aligned
+                double linear = 0.0;
+                if (std::fabs(yawErr) < 0.3) {
+                    double dist = std::hypot(dx, dy);
+                    linear = std::min(MAX_LINEAR_SPEED, dist);
+                }
+
+                sendCmd(angular, linear);
+            }
+        }
     }
-
+    sendCmd(0, 0);
 }
 
 

@@ -1,6 +1,7 @@
 #include "laserprocessing.h"
 #include <algorithm>
 #include <numeric>
+#include <cmath>
 
 using namespace std;
 
@@ -8,42 +9,43 @@ LaserProcessing::LaserProcessing(std::shared_ptr<PfmsConnector> pfmsConnectorPtr
     pfmsConnectorPtr_(pfmsConnectorPtr),
     seq_(0), minRange_(0.25), maxRange_(15.0)
 {
-   
 }
-
 
 std::vector<pfms::geometry_msgs::Point> LaserProcessing::getObstacles(void)
 {
-    // We need to read the laser scan data
     newScan();
+    std::vector<pfms::geometry_msgs::Point> validPoints;
 
-    std::vector<pfms::geometry_msgs::Point> obstacles;
-
-    for (unsigned int i=0; i<laserScan_.ranges.size(); i++) {
-        if (laserScan_.ranges.at(i) > minRange_ &&
-            laserScan_.ranges.at(i) < maxRange_) {
+    for (unsigned int i = 0; i < laserScan_.ranges.size(); i++) {
+        float r = laserScan_.ranges.at(i);
+        if (r > minRange_ && r < maxRange_) {
             double angle = laserScan_.angle_min + i * laserScan_.angle_increment;
-            double x = laserScan_.ranges.at(i) * cos(angle);
-            double y = laserScan_.ranges.at(i) * sin(angle);
-            obstacles.push_back({x, y, 0});
+            validPoints.push_back({ r * cos(angle), r * sin(angle), 0 });
         }
     }
 
-    //! @todo TASK 1: Write the code to detect the obstacles in the laser scan (which is now in obstacles)
-    //! Recall that this is part of a square and you may see one side of it or part of two sides
+    std::vector<pfms::geometry_msgs::Point> obstacles;
+    if (validPoints.empty()) return obstacles;
 
-    
-    obstacles.clear();
+    double xMin = validPoints[0].x, xMax = validPoints[0].x;
+    double yMin = validPoints[0].y, yMax = validPoints[0].y;
+    for (auto& p : validPoints) {
+        xMin = std::min(xMin, p.x);
+        xMax = std::max(xMax, p.x);
+        yMin = std::min(yMin, p.y);
+        yMax = std::max(yMax, p.y);
+    }
+
+    obstacles.push_back({ (xMin + xMax) / 2.0,
+                          (yMin + yMax) / 2.0,
+                          0 });
     return obstacles;
 }
 
-
-void LaserProcessing::newScan(){
-    // We need to read the laser scan data
+void LaserProcessing::newScan()
+{
     bool success = false;
     for (int attempts = 0; attempts < 3 && !success; attempts++) {
         success = pfmsConnectorPtr_->read(laserScan_);
-        // When we use ROS we can send error messages to the ROS console
     }
 }
-
