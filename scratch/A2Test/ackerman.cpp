@@ -166,5 +166,6 @@ void Ackerman::driveToGoal(const pfms::geometry_msgs::Point& goal)
         pfmsConnectorPtr_->send(stop);
         if (std::abs(odo.linear.x) < STOP_VELOCITY) break;
         std::this_thread::sleep_for(std::chrono::milliseconds(LOOP_PERIOD_MS));
+        std::cout << "[hardstop] speed=" << std::abs(odo.linear.x) << std::endl;
     }
 }

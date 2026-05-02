@@ -84,10 +84,10 @@ void Skidsteer::driveToGoal(const pfms::geometry_msgs::Point& goal)
             tol = tolerance_;
         }
 
-        const double dx      = goal.x - odo.position.x;
-        const double dy      = goal.y - odo.position.y;
-        const double dist    = std::sqrt(dx * dx + dy * dy);
-        const double bearing = std::atan2(dy, dx);
+        const double dx           = goal.x - odo.position.x;
+        const double dy           = goal.y - odo.position.y;
+        const double dist         = std::sqrt(dx * dx + dy * dy);
+        const double bearing      = std::atan2(dy, dx);
         const double headingError = normaliseAngle(bearing - odo.yaw);
 
         if (++debugCount % DEBUG_INTERVAL == 0) {
@@ -99,13 +99,8 @@ void Skidsteer::driveToGoal(const pfms::geometry_msgs::Point& goal)
                       << " dist=" << dist << "m hdg_err=" << headingError << "rad\n";
         }
 
-        // Goal reached
+        // ── Goal reached ──────────────────────────────────────────────────────
         if (dist < tol) {
-            pfms::commands::SkidSteer stop{};
-            stop.seq      = seq++;
-            stop.move_f_b = 0.0;
-            stop.turn_l_r = 0.0;
-            pfmsConnectorPtr_->send(stop);
             break;
         }
 
@@ -130,23 +125,19 @@ void Skidsteer::driveToGoal(const pfms::geometry_msgs::Point& goal)
 
         pfmsConnectorPtr_->send(cmd);
 
-        {
-            std::lock_guard<std::mutex> lock(mutex_);
-            distanceToGoal_ = dist;
-            timeToGoal_     = dist / MAX_LINEAR_VEL;
-        }
-
-        // Accumulate in-motion time
+        // ── Update telemetry ──────────────────────────────────────────────────
         {
             const double dt = static_cast<double>(LOOP_PERIOD_MS) / 1000.0;
             std::lock_guard<std::mutex> lock(mutex_);
-            if (std::abs(odo.linear.x) > STOP_VELOCITY) timeTravelled_ += dt;
+            distanceToGoal_ = dist;
+            timeToGoal_     = dist / MAX_LINEAR_VEL;
+            timeTravelled_ += dt;
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(LOOP_PERIOD_MS));
     }
 
-    // Hard stop on every exit
+    // ── Hard stop on every exit ───────────────────────────────────────────────
     pfms::commands::SkidSteer stop{};
     stop.seq      = seq++;
     stop.move_f_b = 0.0;

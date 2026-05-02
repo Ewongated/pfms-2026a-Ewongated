@@ -28,10 +28,10 @@ protected:
 private:
     Audi audi_;
     static constexpr int    LOOP_PERIOD_MS   = 50;     ///< Control loop period [ms]
-    static constexpr double STOP_VELOCITY    = 0.001;  ///< Considered stopped below this [m/s]
+    static constexpr double STOP_VELOCITY    = 0.01;  ///< Considered stopped below this [m/s]
     static constexpr double MAX_SPEED        = 8.0;    ///< Used for timeToGoal estimate [m/s]
     static constexpr double MAX_BRAKE_TORQUE = 8000.0; ///< Full brake torque [Nm]
-    static constexpr double MAX_THROTTLE     = 0.7;    ///< Maximum throttle during normal driving [0-1]
+    static constexpr double MAX_THROTTLE     = 1;    ///< Maximum throttle during normal driving [0-1]
     static constexpr double TURNING_THROTTLE = 0.3;    ///< Throttle for tight arc manoeuvre [0-1]
     static constexpr double DECELERATION     = 4.0;    ///< Estimated deceleration under full brake [m/s²]
 };

@@ -48,7 +48,7 @@ private:
     // Control tuning
     static constexpr double HEADING_TOL      = 0.05;  //!< [rad] acceptable heading error before driving
     static constexpr double HEADING_KP       = 1.5;   //!< Proportional gain for heading correction while driving
-    static constexpr double SLOW_DIST        = 3.0;   //!< [m] begin slowing
+    static constexpr double SLOW_DIST        = 1.0;   //!< [m] begin slowing
     static constexpr int    LOOP_PERIOD_MS   = 50;    //!< Control loop period [ms]
     static constexpr int    DEBUG_INTERVAL   = 20;    //!< Print every N iterations (~1 s)
 };
