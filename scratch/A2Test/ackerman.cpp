@@ -42,10 +42,7 @@ void Ackerman::driveToGoal(const pfms::geometry_msgs::Point& goal)
 
     double totalDist    = euclidean(odo0, goal);
     double prevDist     = std::numeric_limits<double>::max();
-    //Nudging on first value -minor
-    double minDist      = std::numeric_limits<double>::max();
     bool wasUnreachable = false;
-    bool nudging        = false;
 
     while (running_.load()) {
         updateOdometry();
@@ -61,18 +58,12 @@ void Ackerman::driveToGoal(const pfms::geometry_msgs::Point& goal)
         const double dist  = euclidean(odo, goal);
         const double speed = std::abs(odo.linear.x);
 
-        // ── Clear nudge flag once car starts moving ───────────────────────────
-        if (nudging && speed > STOP_VELOCITY) {
-            nudging = false;
-        }
-
         // ── Goal reached check ────────────────────────────────────────────────
         if (dist < tol || (dist > prevDist && prevDist < tol)) {
             break;
         }
 
         // ── Update tracking variables ─────────────────────────────────────────
-        minDist  = std::min(minDist, dist);
         prevDist = dist;
 
         // ── Ask the Audi model for the correct steering ───────────────────────
@@ -82,7 +73,7 @@ void Ackerman::driveToGoal(const pfms::geometry_msgs::Point& goal)
 
         std::cout << "[driveToGoal] reachable=" << reachable
                   << " dist=" << dist
-                  << " progress=" << (1.0 - dist / totalDist)
+                  << " speed=" << speed
                   << std::endl;
 
         if (!reachable) {
@@ -127,32 +118,17 @@ void Ackerman::driveToGoal(const pfms::geometry_msgs::Point& goal)
             std::cout << "[driveToGoal] Reachable again, recaptured totalDist=" << totalDist << std::endl;
         }
 
-        // ── Normal progress-based throttle/brake ──────────────────────────────
-        const double distCovered = totalDist - dist;
-        const double progress    = std::max(distCovered / totalDist, 0.0);
-
-        // ── Failsafe — nudge toward goal if stalled at closest point ──────────
-        if (speed < STOP_VELOCITY && dist > tol && std::abs(dist - minDist) < NUDGE_THRESHOLD) {
-            pfms::commands::Ackerman nudge{};
-            nudge.seq      = seq++;
-            nudge.brake    = 0.0;
-            nudge.steering = steering;
-            nudge.throttle = NUDGE_THROTTLE;
-            std::cout << "[driveToGoal] NUDGE dist=" << dist 
-            << " minDist=" << minDist 
-            << " speed=" << speed << std::endl;
-            pfmsConnectorPtr_->send(nudge);
-            nudging = true;
-            std::this_thread::sleep_for(std::chrono::milliseconds(LOOP_PERIOD_MS));
-            continue;
-        }
+        // ── Velocity-based throttle/brake ─────────────────────────────────────
+        const double distCovered  = totalDist - dist;
+        const double progress     = std::max(distCovered / totalDist, 0.0);
+        const double stoppingDist = (speed * speed) / (2.0 * DECELERATION);
 
         double throttle = 0.0;
         double brake    = 0.0;
-        if (progress < 0.5) {
+        if (dist < stoppingDist) {
+            brake = MAX_BRAKE_TORQUE;
+        } else {
             throttle = (1.0 - (progress * 2.0)) * MAX_THROTTLE;
-        } else if (progress > MAX_BRAKE_PROGRESS) {
-            brake = std::min((progress - MAX_BRAKE_PROGRESS) / BRAKE_RAMP_WIDTH, 1.0) * MAX_BRAKE_TORQUE;
         }
 
         pfms::commands::Ackerman cmd{};
@@ -182,14 +158,12 @@ void Ackerman::driveToGoal(const pfms::geometry_msgs::Point& goal)
             std::lock_guard<std::mutex> lock(mutex_);
             odo = odometry_;
         }
-        if (!nudging) {
-            pfms::commands::Ackerman stop{};
-            stop.seq      = seq++;
-            stop.brake    = MAX_BRAKE_TORQUE;
-            stop.steering = 0.0;
-            stop.throttle = 0.0;
-            pfmsConnectorPtr_->send(stop);
-        }
+        pfms::commands::Ackerman stop{};
+        stop.seq      = seq++;
+        stop.brake    = MAX_BRAKE_TORQUE;
+        stop.steering = 0.0;
+        stop.throttle = 0.0;
+        pfmsConnectorPtr_->send(stop);
         if (std::abs(odo.linear.x) < STOP_VELOCITY) break;
         std::this_thread::sleep_for(std::chrono::milliseconds(LOOP_PERIOD_MS));
     }
