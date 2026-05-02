@@ -87,10 +87,14 @@ bool Mission::execute(bool start)
 
     // Dispatch stored goals to each controller
     {
-        std::lock_guard<std::mutex> lock(mutex_);
         for (unsigned int i = 0; i < controllers_.size(); ++i) {
-            if (!goalsByIndex_[i].empty()) {
-                controllers_[i]->setGoals(goalsByIndex_[i]);
+            std::vector<pfms::geometry_msgs::Point> goals;
+            {
+                std::lock_guard<std::mutex> lock(mutex_);
+                goals = goalsByIndex_[i];
+            }
+            if (!goals.empty()) {
+                controllers_[i]->setGoals(goals);
             }
         }
     }
@@ -124,26 +128,35 @@ std::vector<unsigned int> Mission::status()
     for (unsigned int i = 0; i < controllers_.size(); ++i) {
         unsigned int goalIdx = 0;
         const pfms::PlatformStatus ps = controllers_[i]->status(goalIdx);
+        const double travelled = controllers_[i]->distanceTravelled();
+
+        std::vector<pfms::geometry_msgs::Point> goals;
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            if (i < goalsByIndex_.size()) goals = goalsByIndex_[i];
+        }
+
+        std::cout << "[status] controller " << i
+                  << " ps=" << ps
+                  << " goalIdx=" << goalIdx
+                  << " goals.size()=" << goals.size()
+                  << " travelled=" << travelled
+                  << " totalDist=" << totalDistance_[i] << std::endl;
 
         if (totalDistance_[i] <= 0.0) {
             result.push_back(0u);
             continue;
         }
 
-        const double travelled = controllers_[i]->distanceTravelled();
-
-        if (ps == pfms::PlatformStatus::IDLE) {
-            std::vector<pfms::geometry_msgs::Point> goals;
-            {
-                std::lock_guard<std::mutex> lock(mutex_);
-                if (i < goalsByIndex_.size()) goals = goalsByIndex_[i];
-            }
-            const unsigned int pct =
-                (goalIdx >= static_cast<unsigned int>(goals.size()))
-                ? 100u
-                : static_cast<unsigned int>(
-                      std::min(100.0, 100.0 * travelled / totalDistance_[i]));
-            result.push_back(pct);
+        // Return 100 if IDLE and all goals exhausted, or if goalIdx has
+        // passed all goals regardless of status
+        if ((ps == pfms::PlatformStatus::IDLE &&
+             goalIdx >= static_cast<unsigned int>(goals.size())) ||
+            goalIdx >= static_cast<unsigned int>(goals.size())) {
+            result.push_back(100u);
+        } else if (ps == pfms::PlatformStatus::IDLE) {
+            result.push_back(static_cast<unsigned int>(
+                std::min(100.0, 100.0 * travelled / totalDistance_[i])));
         } else {
             result.push_back(static_cast<unsigned int>(
                 std::min(99.0, 100.0 * travelled / totalDistance_[i])));
