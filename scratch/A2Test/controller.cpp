@@ -159,8 +159,6 @@ void Controller::run()
         
         if (!running_.load()) break;
 
-        waitUntilStopped();  // ← ensure fully stopped before next goal
-
         std::cout << "[run] Goal " << currentGoalIndex_ << " complete, incrementing index." << std::endl;
 
         updateOdometry();
@@ -215,14 +213,4 @@ double Controller::normaliseAngle(double angle)
     angle = std::fmod(angle + M_PI, 2.0 * M_PI);
     if (angle < 0.0) angle += 2.0 * M_PI;
     return angle - M_PI;
-}
-
-void Controller::waitUntilStopped()
-{
-    bool stopped = false;
-    while (!stopped) {
-        updateOdometry();
-        std::lock_guard<std::mutex> lock(mutex_);
-        stopped = (std::abs(odometry_.linear.x) < 0.01);
-    }
 }

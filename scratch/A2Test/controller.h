@@ -37,7 +37,6 @@ public:
     double distanceTravelled(void) override;
     double timeTravelled(void) override;
     pfms::nav_msgs::Odometry getOdometry(void) override;
-    void waitUntilStopped();  // blocks until |v| < STOP_VELOCITY
 
 protected:
     /**
