@@ -26,6 +26,18 @@ target_link_libraries(testMissionReachGoals ${GTEST_LIBRARIES} controller missio
 add_executable(testMissionObstruction test_mission_obstruction.cpp)
 target_link_libraries(testMissionObstruction ${GTEST_LIBRARIES} ranger controller mission pfmshog ignition-msgs8::ignition-msgs8 ignition-transport11::ignition-transport11)
 
+# Constructor Test
+add_executable(testConstructors test_constructors.cpp)
+target_link_libraries(testConstructors ${GTEST_LIBRARIES} controller pfmshog ignition-msgs8::ignition-msgs8 ignition-transport11::ignition-transport11)
+
+# Ackerman Mission Interrupt/Resume Test
+add_executable(testAckermanMission test_ackerman_mission.cpp)
+target_link_libraries(testAckermanMission ${GTEST_LIBRARIES} controller mission pfmshog ignition-msgs8::ignition-msgs8 ignition-transport11::ignition-transport11)
+
+# Skidsteer Mission Interrupt/Resume Test
+add_executable(testSkidsteerMission test_skidsteer_mission.cpp)
+target_link_libraries(testSkidsteerMission ${GTEST_LIBRARIES} controller mission pfmshog ignition-msgs8::ignition-msgs8 ignition-transport11::ignition-transport11)
+
 # # TSP Quadcopter
 # add_executable(testTspReachGoalsQuad tsp_reach_goals_quad.cpp)
 # target_link_libraries(testTspReachGoalsQuad ${GTEST_LIBRARIES} controller mission pfmshog ignition-msgs8::ignition-msgs8 ignition-transport11::ignition-transport11)

@@ -115,12 +115,13 @@ void Ackerman::driveToGoal(const pfms::geometry_msgs::Point& goal)
         if (wasUnreachable) {
             totalDist      = dist;
             wasUnreachable = false;
+            prevDist       = std::numeric_limits<double>::max();
             std::cout << "[driveToGoal] Reachable again, recaptured totalDist=" << totalDist << std::endl;
         }
 
         // ── Velocity-based throttle/brake ─────────────────────────────────────
         const double distCovered  = totalDist - dist;
-        const double progress     = std::max(distCovered / totalDist, 0.0);
+        const double progress     = std::clamp(distCovered / totalDist, 0.0, 1.0);
         const double stoppingDist = (speed * speed) / (2.0 * DECELERATION);
 
         double throttle = 0.0;
@@ -128,7 +129,13 @@ void Ackerman::driveToGoal(const pfms::geometry_msgs::Point& goal)
         if (dist < stoppingDist) {
             brake = MAX_BRAKE_TORQUE;
         } else {
-            throttle = (1.0 - (progress * 2.0)) * MAX_THROTTLE;
+            // Hold low throttle until sufficient progress — prevents full
+            // acceleration immediately after exiting arc manoeuvre
+            const double rawThrottle = (1.0 - (progress * 2.0)) * MAX_THROTTLE;
+            throttle = (progress < LOW_PROGRESS_THROTTLE)
+                       ? TURNING_THROTTLE
+                       : rawThrottle;
+            throttle = std::max(0.0, throttle);
         }
 
         pfms::commands::Ackerman cmd{};
@@ -166,6 +173,5 @@ void Ackerman::driveToGoal(const pfms::geometry_msgs::Point& goal)
         pfmsConnectorPtr_->send(stop);
         if (std::abs(odo.linear.x) < STOP_VELOCITY) break;
         std::this_thread::sleep_for(std::chrono::milliseconds(LOOP_PERIOD_MS));
-        std::cout << "[hardstop] speed=" << std::abs(odo.linear.x) << std::endl;
     }
 }

@@ -52,8 +52,7 @@ void Mission::setGoals(std::vector<pfms::geometry_msgs::Point> goals,
 {
     std::lock_guard<std::mutex> lock(mutex_);
     for (unsigned int i = 0; i < controllers_.size(); ++i) {
-        if (controllers_[i]->getPlatformType() == platform &&
-            goalsByIndex_[i].empty()) {
+        if (controllers_[i]->getPlatformType() == platform) {
             goalsByIndex_[i] = goals;
             return;
         }
