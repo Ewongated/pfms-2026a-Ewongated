@@ -10,6 +10,7 @@ Ranger::Ranger(pfms::PlatformType type)
     , angularResolution_(0.0)
     , maxRange_(0.0)
     , minRange_(0.0)
+    , angleMin_(0.0)
     , sensingMethod_(pfms::RangerType::POINT)
 {
     pfmsConnectorPtr_ = std::make_shared<PfmsConnector>(type);
@@ -45,4 +46,10 @@ double Ranger::getMinRange()
 pfms::RangerType Ranger::getSensingMethod()
 {
     return sensingMethod_;
+}
+
+double Ranger::getAngleMin()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    return angleMin_;
 }

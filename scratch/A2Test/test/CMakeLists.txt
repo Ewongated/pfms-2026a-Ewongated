@@ -38,6 +38,10 @@ target_link_libraries(testAckermanMission ${GTEST_LIBRARIES} controller mission 
 add_executable(testSkidsteerMission test_skidsteer_mission.cpp)
 target_link_libraries(testSkidsteerMission ${GTEST_LIBRARIES} controller mission pfmshog ignition-msgs8::ignition-msgs8 ignition-transport11::ignition-transport11)
 
+# Student Obstruction Test — Skidsteer obstructed
+add_executable(testSkidObstruction test_skidsteer_obstruction.cpp)
+target_link_libraries(testSkidObstruction ${GTEST_LIBRARIES} ranger controller mission pfmshog ignition-msgs8::ignition-msgs8 ignition-transport11::ignition-transport11)
+
 # # TSP Quadcopter
 # add_executable(testTspReachGoalsQuad tsp_reach_goals_quad.cpp)
 # target_link_libraries(testTspReachGoalsQuad ${GTEST_LIBRARIES} controller mission pfmshog ignition-msgs8::ignition-msgs8 ignition-transport11::ignition-transport11)

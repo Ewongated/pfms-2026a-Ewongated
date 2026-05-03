@@ -32,32 +32,49 @@ std::vector<double> Laser::getData()
     pfms::sensor_msgs::LaserScan scan;
     pfmsConnectorPtr_->read(scan);
 
-    // Compute world-frame sensor pose from current platform odometry
+    // Update geometry from actual scan data so isPathObstructed uses correct values
+    // and compute sensor pose — both under a single lock
     pfms::nav_msgs::Odometry odo;
     pfmsConnectorPtr_->read(odo);
 
     pfms::nav_msgs::Odometry pose = odo;
 
     if (type_ == pfms::PlatformType::ACKERMAN) {
-        // Offset sensor forward of rear axle
         pose.position.x += ACKERMAN_OFFSET * std::cos(odo.yaw);
         pose.position.y += ACKERMAN_OFFSET * std::sin(odo.yaw);
     }
-    // Husky: sensor at platform centre — pose == odo
 
     {
         std::lock_guard<std::mutex> lock(mutex_);
-        sensorPose_ = pose;
+        angularResolution_ = scan.angle_increment * 180.0 / M_PI;
+        fov_               = (scan.angle_max - scan.angle_min) * 180.0 / M_PI;
+        maxRange_          = scan.range_max;
+        minRange_          = scan.range_min;
+        angleMin_          = scan.angle_min;
+        sensorPose_        = pose;
     }
 
     std::vector<double> ranges;
     ranges.reserve(scan.ranges.size());
     for (const float r : scan.ranges) {
-        if (r >= static_cast<float>(minRange_) && r <= static_cast<float>(maxRange_)) {
+        if (r >= static_cast<float>(scan.range_min) && r <= static_cast<float>(scan.range_max)) {
             ranges.push_back(static_cast<double>(r));
         } else {
             ranges.push_back(0.0);
         }
     }
+
+    // Debug: print raw scan values around centre
+    std::cout << "[getData] ranges.size()=" << ranges.size()
+              << " angle_min=" << scan.angle_min
+              << " angle_inc=" << scan.angle_increment
+              << " range_min=" << scan.range_min
+              << " range_max=" << scan.range_max << std::endl;
+    unsigned int centre = ranges.size() / 2;
+    for (unsigned int i = centre - 10; i <= centre + 10 && i < ranges.size(); ++i) {
+        std::cout << "[getData] ray[" << i << "]=" << scan.ranges[i]
+                  << " filtered=" << ranges[i] << std::endl;
+    }
+
     return ranges;
 }

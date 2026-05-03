@@ -1,4 +1,5 @@
 #include "mission.h"
+#include "ranger.h"
 #include <chrono>
 #include <thread>
 #include <cmath>
@@ -15,6 +16,7 @@ Mission::Mission(std::vector<ControllerInterface*> controllers)
     , abandoned_(false)
 {
     goalsByIndex_.resize(controllers_.size());
+    goalsAssigned_.assign(controllers_.size(), false);
     abandonedControllers_.assign(controllers_.size(), false);
     totalDistance_.assign(controllers_.size(), 0.0);
 }
@@ -28,6 +30,7 @@ Mission::Mission(std::vector<ControllerInterface*> controllers,
     , abandoned_(false)
 {
     goalsByIndex_.resize(controllers_.size());
+    goalsAssigned_.assign(controllers_.size(), false);
     abandonedControllers_.assign(controllers_.size(), false);
     totalDistance_.assign(controllers_.size(), 0.0);
 }
@@ -52,8 +55,9 @@ void Mission::setGoals(std::vector<pfms::geometry_msgs::Point> goals,
 {
     std::lock_guard<std::mutex> lock(mutex_);
     for (unsigned int i = 0; i < controllers_.size(); ++i) {
-        if (controllers_[i]->getPlatformType() == platform) {
+        if (controllers_[i]->getPlatformType() == platform && !goalsAssigned_[i]) {
             goalsByIndex_[i] = goals;
+            goalsAssigned_[i] = true;
             return;
         }
     }
@@ -81,6 +85,8 @@ bool Mission::execute(bool start)
         running_ = false;
         for (auto* ctrl : controllers_) ctrl->execute(false);
         if (missionThread_.joinable()) missionThread_.join();
+        std::lock_guard<std::mutex> lock(mutex_);
+        goalsAssigned_.assign(controllers_.size(), false);
         return true;
     }
 
@@ -301,15 +307,33 @@ bool Mission::isPathObstructed(unsigned int controllerIdx,
     while (relBearing >  M_PI) relBearing -= 2.0 * M_PI;
     while (relBearing < -M_PI) relBearing += 2.0 * M_PI;
 
-    const double angleMin     = -fov / 2.0;
+    const double angleMin     = static_cast<Ranger*>(ranger)->getAngleMin();
     const double clearanceM   = 1.0; //!< obstacle must be this much closer than goal
 
+    std::cout << "[isPathObstructed] controller=" << controllerIdx
+              << " goal=(" << nextGoal.x << "," << nextGoal.y << ")"
+              << " sensorPos=(" << sensorPose.position.x << "," << sensorPose.position.y << ")"
+              << " sensorYaw=" << sensorPose.yaw
+              << " distToGoal=" << distToGoal
+              << " relBearing=" << relBearing
+              << " ranges.size()=" << ranges.size() << std::endl;
+
+    double minRangeInWindow = maxRange;
     for (unsigned int r = 0; r < ranges.size(); ++r) {
         const double rayAngle = angleMin + static_cast<double>(r) * angRes;
         if (std::abs(rayAngle - relBearing) > BEAM_HALF_WIDTH_RAD) continue;
         if (ranges[r] <= 0.0 || ranges[r] >= maxRange)              continue;
-        if (ranges[r] < (distToGoal - clearanceM))                  return true;
+        if (ranges[r] < minRangeInWindow) minRangeInWindow = ranges[r];
+        if (ranges[r] < (distToGoal - clearanceM)) {
+            std::cout << "[isPathObstructed] OBSTRUCTED — ray=" << r
+                      << " rayAngle=" << rayAngle
+                      << " range=" << ranges[r]
+                      << " threshold=" << (distToGoal - clearanceM) << std::endl;
+            return true;
+        }
     }
+    std::cout << "[isPathObstructed] clear — minRangeInWindow=" << minRangeInWindow
+              << " threshold=" << (distToGoal - clearanceM) << std::endl;
     return false;
 }
 

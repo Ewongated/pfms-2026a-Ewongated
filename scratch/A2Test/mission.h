@@ -75,6 +75,8 @@ private:
     /// Goals per controller index — parallel to controllers_
     std::vector<std::vector<pfms::geometry_msgs::Point>> goalsByIndex_;
 
+    std::vector<bool> goalsAssigned_; //!< Tracks which controllers have been assigned goals
+
     std::vector<double> totalDistance_; //!< Pre-computed total distance per controller
 
     pfms::MissionObjective objective_; //!< BASIC or ADVANCED

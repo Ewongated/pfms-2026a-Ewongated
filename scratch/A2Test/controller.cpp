@@ -93,14 +93,14 @@ bool Controller::setGoals(std::vector<pfms::geometry_msgs::Point> goals)
         double distance, time;
         pfms::nav_msgs::Odometry estimatedGoalPose;
         if (!checkOriginToDestination(origin, goal, distance, time, estimatedGoalPose)) {
-            std::cout << "[setGoals] Goal (" << goal.x << ", " << goal.y << ") unreachable" << std::endl;
+            // std::cout << "[setGoals] Goal (" << goal.x << ", " << goal.y << ") unreachable" << std::endl;
             reachable = false;
             break;
         }
-        std::cout << "[setGoals] Goal (" << goal.x << ", " << goal.y << ") reachable, distance=" << distance << " time=" << time << std::endl;
+        // std::cout << "[setGoals] Goal (" << goal.x << ", " << goal.y << ") reachable, distance=" << distance << " time=" << time << std::endl;
         origin = estimatedGoalPose;
     }
-    std::cout << "[setGoals] All goals reachable=" << reachable << std::endl;
+    // std::cout << "[setGoals] All goals reachable=" << reachable << std::endl;
     return reachable;
 }
 

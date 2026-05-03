@@ -28,6 +28,7 @@ public:
     double getMaxRange(void) override;
     double getMinRange(void) override;
     pfms::RangerType getSensingMethod(void) override;
+    double getAngleMin(void); //!< Start angle of scan [rad]
 
     // getData() pure virtual — implemented by Laser / Sonar
 
@@ -40,6 +41,7 @@ protected:
     double           angularResolution_; //!< Angular resolution [deg/ray]
     double           maxRange_;          //!< Maximum valid range [m]
     double           minRange_;          //!< Minimum valid range [m]
+    double           angleMin_;          //!< Start angle of scan [rad]
     pfms::RangerType sensingMethod_;     //!< POINT or CONE
 
     mutable std::mutex       mutex_;      //!< Protects sensorPose_
