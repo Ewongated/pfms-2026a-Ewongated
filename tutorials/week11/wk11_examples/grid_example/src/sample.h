@@ -10,7 +10,7 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
 #include "nav_msgs/msg/odometry.hpp"
-#include "sensor_msgs/msg/range.hpp"
+#include "sensor_msgs/msg/laser_scan.hpp"
 
 #include <grid_map_ros/grid_map_ros.hpp>
 #include <grid_map_msgs/msg/grid_map.hpp>
@@ -37,7 +37,7 @@ void odom_callback(const std::shared_ptr<nav_msgs::msg::Odometry> msg);
    *  @param sensor_msgs::LaserScanConstPtr - The laserscan message
    *  @note This function and the declaration are ROS specific
    */
-void sonar_callback(const std::shared_ptr<sensor_msgs::msg::Range> msg);
+void laser_callback(const std::shared_ptr<sensor_msgs::msg::LaserScan> msg);
 
  /*! @brief process Main processing function
    *
@@ -51,7 +51,7 @@ void sonar_callback(const std::shared_ptr<sensor_msgs::msg::Range> msg);
 
 private:
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr sub1_;
-  rclcpp::Subscription<sensor_msgs::msg::Range>::SharedPtr sub2_;
+  rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr sub2_;
   rclcpp::Publisher<grid_map_msgs::msg::GridMap>::SharedPtr pub1_;
   //! @todo Add a subscriber as TUTORIAl.md and look at the odometry example
 
@@ -60,8 +60,8 @@ private:
   geometry_msgs::msg::Pose robotPose_;   
   std::atomic<bool> robotPoseReceived_ ;  // Flag to indicate odometry data received
 
-  sensor_msgs::msg::Range range_;
-  std::atomic<bool> rangeDataReceived_ ; // Flag to indicate laser data received
+  sensor_msgs::msg::LaserScan laserData_;
+  std::atomic<bool> laserDataReceived_ ; // Flag to indicate laser data received
   
   std::mutex dataMtx_; // Mutex for shared data access
 
