@@ -8,7 +8,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(BUILD_TESTS ON) # This switch here sets the tests ON automatically
-set(MARKING_TESTS OFF) # This switch here sets the tests ON automatically
+set(MARKING_TESTS ON) # This switch here sets the tests ON automatically
 
 find_package(pfms2ros 3.1.1 REQUIRED)
 find_package(ignition-msgs8 REQUIRED)
