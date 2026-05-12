@@ -10,7 +10,7 @@
 
 //!@todo: TASK 5: Include the Trigger message
 // Syntax: #include "package_name/srv/service_name.hpp"
-
+#include "std_srvs/srv/trigger.hpp"
 #include "laserprocessing.h"
 
 
@@ -39,7 +39,8 @@ public:
      *  Syntax: void function_name(const std::shared_ptr<service_type::Request>  req,
       *                             std::shared_ptr<service_type::Response> res);
      */
-      void detect();
+      void detect(const std::shared_ptr<std_srvs::srv::Trigger::Request> req,
+            std::shared_ptr<std_srvs::srv::Trigger::Response> res);
 
 private:
 
@@ -54,6 +55,7 @@ private:
 
     //! @todo: TASK 5: Create a service object
     //! Syntax: rclcpp::Service<service_type>::SharedPtr variable_name_;
+    rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr service_;
 
 
     rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr sub1_;//!< Pointer to the laser scan subscriber
