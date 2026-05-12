@@ -1,0 +1,50 @@
+rosbag2_bagfile_information:
+  version: 5
+  storage_identifier: sqlite3
+  duration:
+    nanoseconds: 1991680571
+  starting_time:
+    nanoseconds_since_epoch: 1778589273999389790
+  message_count: 84
+  topics_with_message_count:
+    - topic_metadata:
+        name: /husky/laserscan
+        type: sensor_msgs/msg/LaserScan
+        serialization_format: cdr
+        offered_qos_profiles: ""
+      message_count: 1
+    - topic_metadata:
+        name: /tf_static
+        type: tf2_msgs/msg/TFMessage
+        serialization_format: cdr
+        offered_qos_profiles: ""
+      message_count: 1
+    - topic_metadata:
+        name: /husky/sonar
+        type: sensor_msgs/msg/LaserScan
+        serialization_format: cdr
+        offered_qos_profiles: ""
+      message_count: 1
+    - topic_metadata:
+        name: /tf
+        type: tf2_msgs/msg/TFMessage
+        serialization_format: cdr
+        offered_qos_profiles: ""
+      message_count: 80
+    - topic_metadata:
+        name: /husky/odom
+        type: nav_msgs/msg/Odometry
+        serialization_format: cdr
+        offered_qos_profiles: ""
+      message_count: 1
+  compression_format: ""
+  compression_mode: ""
+  relative_file_paths:
+    - sample_2026-05-12_22-34-33_0.db3
+  files:
+    - path: sample_2026-05-12_22-34-33_0.db3
+      starting_time:
+        nanoseconds_since_epoch: 1778589273999389790
+      duration:
+        nanoseconds: 1991680571
+      message_count: 84
