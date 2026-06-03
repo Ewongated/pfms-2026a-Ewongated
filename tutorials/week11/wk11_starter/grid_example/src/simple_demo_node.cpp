@@ -15,7 +15,7 @@ int main(int argc, char ** argv)
 
   // Create grid map.
   grid_map::GridMap map({"elevation"});
-  map.setFrameId("map");
+  map.setFrameId("world");
   map.setGeometry(grid_map::Length(1.2, 2.0), 0.1);
   RCLCPP_INFO(
     node->get_logger(),

@@ -16,9 +16,9 @@ Controller::Controller() :
     // We create a node handle in derived class (as they have custom messages/topics)  
     // We still have one message we could potentialy use (odo)
     sub1_ = this->create_subscription<nav_msgs::msg::Odometry>(
-        "/drone/gt_odom", 1000, std::bind(&Controller::odoCallback,this,_1));
+        "/sjtu_drone/odom", 1000, std::bind(&Controller::odoCallback,this,_1));
     sub2_ = this->create_subscription<geometry_msgs::msg::Point>(
-        "/drone/goal", 1000, std::bind(&Controller::setGoal,this,_1));
+        "/sjtu_drone/goal", 1000, std::bind(&Controller::setGoal,this,_1));
 
     sub3_ = this->create_subscription<geometry_msgs::msg::PointStamped>(
         "/clicked_point", 1000, std::bind(&Controller::setGoalClicked,this,_1));

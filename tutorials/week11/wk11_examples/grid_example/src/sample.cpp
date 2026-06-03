@@ -15,11 +15,11 @@ PfmsSample::PfmsSample()
 {
   //Subscribing to odometry
   sub1_ = this->create_subscription<nav_msgs::msg::Odometry>(
-    "/drone/gt_odom", 10, std::bind(&PfmsSample::odom_callback, this, _1));
+    "/sjtu_drone/odom", 10, std::bind(&PfmsSample::odom_callback, this, _1));
 
   //! @todo Subscribe to the laser as TUTORIAl.md and look at the odometry example
-  sub2_ = this->create_subscription<sensor_msgs::msg::Range>(
-    "/drone/sonar", 10, std::bind(&PfmsSample::sonar_callback, this, _1));
+  sub2_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
+    "/sjtu_drone/sonar", 10, std::bind(&PfmsSample::laser_callback, this, _1));
 
   pub1_ = this->create_publisher<grid_map_msgs::msg::GridMap>(
     "grid_map", rclcpp::QoS(1).transient_local());
@@ -67,11 +67,11 @@ void PfmsSample::odom_callback(const std::shared_ptr<nav_msgs::msg::Odometry> ms
 
 //! @todo - Ex 1: Add a callback for the laser scan, look at odo callback example
 
-void PfmsSample::sonar_callback(const std::shared_ptr<sensor_msgs::msg::Range> msg)
+void PfmsSample::laser_callback(const std::shared_ptr<sensor_msgs::msg::LaserScan> msg)
 {
     std::unique_lock<std::mutex> lck (dataMtx_);
-    range_ = *msg; // We store a copy of the laser data in laserData_
-    rangeDataReceived_ = true;
+    laserData_ = *msg; // We store a copy of the laser data in laserData_
+    laserDataReceived_ = true;
 }
 
 
@@ -79,7 +79,7 @@ void PfmsSample::process()
 {
 
   geometry_msgs::msg::Pose robotPose;
-  sensor_msgs::msg::Range range;
+  sensor_msgs::msg::LaserScan laserScan;
 
   rclcpp::Rate loop_rate(10); // 10Hz    
   rclcpp::Clock clock;
@@ -87,8 +87,8 @@ void PfmsSample::process()
   // Publish grid map every 5 seconds
   rclcpp::Time last_publish_time = this->now();
 
-  while(!(rangeDataReceived_.load() && robotPoseReceived_.load())) {
-    RCLCPP_INFO(get_logger(), "Waiting for odometry and sonar data...");
+  while(!(laserDataReceived_.load() && robotPoseReceived_.load())) {
+    RCLCPP_INFO(get_logger(), "Waiting for odometry and laser data...");
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
     if(!rclcpp::ok()) {
       return; // This will exit the loop, allowing to join if ROS is shutting down
@@ -96,11 +96,11 @@ void PfmsSample::process()
   }
 
   while (rclcpp::ok()) {
-    // Wait until both sonar and odometry data are received
+    // Wait until both laser and odometry data are received
     {
       std::unique_lock<std::mutex> lck(dataMtx_);
       robotPose = robotPose_;
-      range = range_;
+      laserScan = laserData_;
     }
 
     // As the assessment contains a project which looks at using sonar data to augument the map
@@ -114,10 +114,7 @@ void PfmsSample::process()
     // We can thereafter use the position of the robot and the range data to create a point in 3D space
     // and then transform it to world coordinates. 
 
-    // So, we will use come ficticous values for the sonar data, and we will assume that the sonar is
-    range.range = 2.0; // Example range value
-
-    // Transform sonar range to world coordinates and update the grid map
+    // Transform laser range to world coordinates and update the grid map
     tf2::Quaternion q(
         robotPose.orientation.x,
         robotPose.orientation.y,
@@ -128,8 +125,10 @@ void PfmsSample::process()
         robotPose.position.y,
         robotPose.position.z));
 
-    tf2::Vector3 sonarPoint(0.0, 0.0, -range.range); // Assuming sonar is along the x-axis
-    tf2::Vector3 worldPoint = robotToWorld * sonarPoint;
+    tf2::Vector3 laserPoint(0.0, 0.0, -laserScan.ranges.at(1)); // Assuming laser is along the x-axis
+    tf2::Vector3 worldPoint = robotToWorld * laserPoint;
+
+    RCLCPP_INFO(get_logger(), "Laser point in world coordinates: (%f, %f, %f)", worldPoint.x(), worldPoint.y(), worldPoint.z());
 
     // Check if the point is inside the map
     grid_map::Position position(worldPoint.x(), worldPoint.y());
@@ -139,11 +138,16 @@ void PfmsSample::process()
       // You can get current value
       double value = map.atPosition("elevation", position);
 
-      // Let's set map to the value of the sonar in global coordinates
+      // Let's set map to the value of the laser in global coordinates
 
       // You can set the value of the elevation layer at the position , supplying the height as the value.
       map.atPosition("elevation", position) = worldPoint.z();
 
+      RCLCPP_INFO(get_logger(), "Updated map at position (%f, %f) with elevation %f", position.x(), position.y(), worldPoint.z());
+
+    }
+    else{
+      RCLCPP_WARN(get_logger(), "Laser point is outside the map boundaries, skipping update.");
     }
 
     // Publishing the map is a large amount of data, so we will not do it every time

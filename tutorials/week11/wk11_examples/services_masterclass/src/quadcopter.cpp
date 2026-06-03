@@ -25,9 +25,9 @@ Quadcopter::Quadcopter() :
 {
     tolerance_=0.5;//We set tolerance to be default of 0.5
 
-    pubCmdVel_  = this->create_publisher<geometry_msgs::msg::Twist>("drone/cmd_vel",3);  
-    pubTakeOff_ = this->create_publisher<std_msgs::msg::Empty>("drone/takeoff",3);  
-    pubLanding_ = this->create_publisher<std_msgs::msg::Empty>("drone/land",3);  
+    pubCmdVel_  = this->create_publisher<geometry_msgs::msg::Twist>("sjtu_drone/cmd_vel",3);  
+    pubTakeOff_ = this->create_publisher<std_msgs::msg::Empty>("sjtu_drone/takeoff",3);  
+    pubLanding_ = this->create_publisher<std_msgs::msg::Empty>("sjtu_drone/land",3);  
 
     timer_ = this->create_wall_timer(
     100ms, std::bind(&Quadcopter::reachGoal, this));
@@ -155,16 +155,13 @@ bool Quadcopter::reachGoal(void) {
         dz = -1.0;
     }
 
-    //Let's send command with these parameters
-    sendCmd(0, -dy, dz, dx);  
-
     bool reached = goalReached();  
 
     if(reached){
         goalSet_=false;
         // Send the quadcopter to land
         sendCmd(0, 0, -1.0, 0);
-        ROS_INFO("Goal reached");
+        RCLCPP_INFO_STREAM(get_logger(),"Goal reached");
     }
     else{
         //Let's send command with these parameters

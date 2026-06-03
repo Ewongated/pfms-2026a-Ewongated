@@ -1,0 +1,8 @@
+single_message_recorder:
+  ros__parameters:
+    topics:
+      - "/sjtu_drone/laserscan"
+      - "/sjtu_drone/sonar"
+      - "/sjtu_drone/odom"  
+      - "/tf"
+      - "/tf_static"

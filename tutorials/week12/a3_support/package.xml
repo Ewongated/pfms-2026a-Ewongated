@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format2.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="2">
+
+  <name>a3_support</name>
+  <version>0.0.1</version>
+  <description>support package for 41012 : A3 Individual Project Assignment</description>
+  <maintainer email="Alen.Alempijevic@uts.edu.au">Alen Alempijevic</maintainer>
+  <author email="Alen.Alempijevic@uts.edu.au">Alen Alempijevic</author>
+  <license>LGPLv3</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  
+  <depend>rclcpp</depend>
+  <depend>geometry_msgs</depend>
+  <depend>visualization_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>rosbag2_cpp</depend>
+  <depend>tinyxml2</depend>
+  <depend>ament_index_cpp</depend>
+  <depend>tf2_msgs</depend>
+  <depend>grid_map_msgs</depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+    <rosdoc2>rosdoc2.yaml</rosdoc2>
+  </export>
+
+</package>
