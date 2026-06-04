@@ -1,0 +1,26 @@
+PROJECT_NAME           = "A3 Racing Track"
+PROJECT_NUMBER         = 0.1.0
+PROJECT_BRIEF          = "ROS2 Ackerman racing mission — 41012 Assignment 3"
+
+OUTPUT_DIRECTORY       = dox
+INPUT                  = src test mainpage.dox
+RECURSIVE              = YES
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = YES
+EXTRACT_STATIC         = YES
+
+GENERATE_HTML          = YES
+GENERATE_LATEX         = NO
+
+HTML_OUTPUT            = html
+HAVE_DOT               = NO
+
+WARN_IF_UNDOCUMENTED   = YES
+WARN_NO_PARAMDOC       = YES
+
+FILE_PATTERNS          = *.h *.cpp *.dox
+USE_MDFILE_AS_MAINPAGE =
+
+JAVADOC_AUTOBRIEF      = YES
+QT_AUTOBRIEF           = NO
+MULTILINE_CPP_IS_BRIEF = NO

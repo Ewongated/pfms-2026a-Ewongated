@@ -1,0 +1,100 @@
+/**
+ * @mainpage A3 Racing Track — ROS2 Package
+ *
+ * @section overview Overview
+ * This package implements the Project 3 Racing Track mission for the
+ * 41012 Mechatronic Systems assignment. It controls an Ackerman (Audi R8)
+ * platform around a racing track using a 180° front-mounted laser scanner.
+ *
+ * @section nodes Nodes
+ * | Executable    | Class        | Description                          |
+ * |---------------|--------------|--------------------------------------|
+ * | racing_node   | RacingNode   | Main mission controller              |
+ *
+ * @section topics Topics
+ * | Topic                    | Type                        | Direction  |
+ * |--------------------------|-----------------------------|------------|
+ * | /orange/odom             | nav_msgs/Odometry           | Subscribe  |
+ * | /orange/laserscan        | sensor_msgs/LaserScan       | Subscribe  |
+ * | /orange/goals            | geometry_msgs/PoseArray     | Subscribe  |
+ * | /orange/throttle_cmd     | std_msgs/Float64            | Publish    |
+ * | /orange/brake_cmd        | std_msgs/Float64            | Publish    |
+ * | /orange/steering_cmd     | std_msgs/Float64            | Publish    |
+ * | /visualisation_marker    | visualization_msgs/MarkerArray | Publish |
+ * | /orange/waypoints        | geometry_msgs/PoseArray     | Publish    |
+ *
+ * @section services Services
+ * | Service          | Type                  | Description              |
+ * |------------------|-----------------------|--------------------------|
+ * | /orange/mission  | std_srvs/SetBool      | Start (true)/Stop (false) mission |
+ *
+ * @section parameters Parameters
+ * | Parameter      | Type   | Default | Description                       |
+ * |----------------|--------|---------|-----------------------------------|
+ * | goal_tolerance | double | 1.5     | Goal-reached radius [m]           |
+ * | advanced       | bool   | false   | Enable D/HD laser-waypoint mode   |
+ *
+ * @section running Running
+ * @subsection build Build
+ * @code
+ * cd ~/ros2_ws
+ * colcon build --packages-select a3_racing
+ * source install/setup.bash
+ * @endcode
+ *
+ * @subsection launch Launch node
+ * @code
+ * # P/C mode:
+ * ros2 run a3_racing racing_node
+ *
+ * # D/HD mode (laser-derived waypoints):
+ * ros2 run a3_racing racing_node --ros-args -p advanced:=true
+ *
+ * # Start mission via service:
+ * ros2 service call /orange/mission std_srvs/srv/SetBool "{data: true}"
+ *
+ * # Stop mission:
+ * ros2 service call /orange/mission std_srvs/srv/SetBool "{data: false}"
+ * @endcode
+ *
+ * @subsection tests Running Unit Tests
+ * Before running tests, record the required rosbags (see test/utest.cpp for
+ * bag names and the topics to record):
+ * @code
+ * # Example — record obstacle-free bag:
+ * ros2 bag record /orange/laserscan /orange/odom -o \
+ *   install/a3_racing/share/a3_racing/data/obstacle_clear
+ *
+ * # Run all tests:
+ * colcon test --packages-select a3_racing
+ * colcon test-result --verbose
+ * @endcode
+ *
+ * @section state_machine State Machine
+ * @code
+ *  ┌──────────────────────────────────────────────────────┐
+ *  │  IDLE  ◄─────────── service data=false ──────────────┤
+ *  │   │                                                   │
+ *  │   │ service data=true                                 │
+ *  │   ▼                                                   │
+ *  │  NAVIGATING ──► obstacle detected ──► STOPPED        │
+ *  │   │  ▲                                  │             │
+ *  │   │  └──────── obstacle cleared ◄───────┘             │
+ *  │   │                                                   │
+ *  │   │ all goals visited                                 │
+ *  │   ▼                                                   │
+ *  │  COMPLETE ─────────────────────────────────────────► │
+ *  └──────────────────────────────────────────────────────┘
+ * @endcode
+ *
+ * @section architecture Architecture Notes
+ * - All sensor algorithms live in the **LaserProcessing** library, which has
+ *   no dependency on rclcpp and can be unit-tested with raw message objects
+ *   loaded from rosbags.
+ * - The **RacingNode** owns one control thread that runs at 20 Hz and is the
+ *   sole writer to all actuator publishers.  ROS callbacks only update shared
+ *   state under mutex_, never command actuators directly.
+ * - All tunable values (gain, tolerances, throttle limits) are `static
+ *   constexpr` constants in the appropriate class — no hard-coded magic
+ *   numbers in algorithm bodies.
+ */
