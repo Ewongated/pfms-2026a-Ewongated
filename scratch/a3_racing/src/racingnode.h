@@ -42,6 +42,9 @@ private:
     void controlLoop();
     double computeSteering(const nav_msgs::msg::Odometry& odom,
                            const geometry_msgs::msg::Point& lookAhead) const;
+    bool cornerAhead(const std::vector<geometry_msgs::msg::Point>& goals,
+                     std::size_t currentGoal,
+                     const nav_msgs::msg::Odometry& odom) const;
     void publishStop();
     void publishCommand(double throttle, double brake, double steering);
     void publishWaypoints();
@@ -57,11 +60,11 @@ private:
     rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr   subLaser_;
     rclcpp::Subscription<geometry_msgs::msg::PoseArray>::SharedPtr subGoals_;
 
-    rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr              pubThrottle_;
-    rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr              pubBrake_;
-    rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr              pubSteering_;
+    rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr               pubThrottle_;
+    rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr               pubBrake_;
+    rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr               pubSteering_;
     rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr pubMarkers_;
-    rclcpp::Publisher<geometry_msgs::msg::PoseArray>::SharedPtr       pubWaypoints_;
+    rclcpp::Publisher<geometry_msgs::msg::PoseArray>::SharedPtr        pubWaypoints_;
 
     rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr service_;
 
@@ -85,14 +88,20 @@ private:
     bool   advanced_;
 
     // Constants
-    static constexpr double CONTROL_HZ         = 20.0;
-    static constexpr double CRUISE_THROTTLE    = 0.25;
-    static constexpr double MAX_BRAKE          = 8000.0;
-    static constexpr double MAX_STEER          = 1;
-    static constexpr double SLOW_ZONE_M        = 10.0;
-    static constexpr double WAYPOINT_SPACING_M = 3.0;
-    static constexpr double LOOKAHEAD_M        = 3.0;
-    static constexpr double WHEELBASE_M        = 2.65;
+    static constexpr double CONTROL_HZ          = 20.0;
+    static constexpr double CRUISE_THROTTLE     = 0.25;
+    static constexpr double MAX_BRAKE           = 8000.0;
+    static constexpr double MAX_STEER           = 0.8;
+    static constexpr double SLOW_ZONE_M         = 10.0;
+    static constexpr double WAYPOINT_SPACING_M  = 3.0;
+    static constexpr double LOOKAHEAD_M         = 6.0;
+    static constexpr double WHEELBASE_M         = 2.65;
+    static constexpr double CORNER_LOOKAHEAD_M  = 30.0;
+    static constexpr double CORNER_ANGLE_THRESH = 0.3;
+    static constexpr double CORNER_THROTTLE     = 0.12;
+    static constexpr double CORNER_BRAKE        = 500.0;
 };
 
-#endif // RACINGNODE_H
+#endif // RACINGNODE_HWaiting for Gazebo...
+
+

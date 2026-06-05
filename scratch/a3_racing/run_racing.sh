@@ -49,10 +49,13 @@ gnome-terminal --title="RacingNode" -- bash -c "
   ros2 run a3_support goals_publisher --ros-args \
     -r goals:=/orange/goals \
     -p filename:=$GOALS_FILE &
-  echo 'Waiting for goals to be received...'
-  sleep 5
+  sleep 2
   echo 'Starting mission...'
-  ros2 service call /orange/mission std_srvs/srv/SetBool '{data: true}'
+  until ros2 service call /orange/mission std_srvs/srv/SetBool '{data: true}' 2>/dev/null | grep -q 'success=True'; do
+    echo 'Mission not ready yet -- retrying...'
+    sleep 2
+  done
+  echo 'Mission started.'
   wait \$NODE_PID
   exec bash" &
 

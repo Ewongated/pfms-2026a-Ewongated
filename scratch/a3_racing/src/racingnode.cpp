@@ -9,6 +9,7 @@ using namespace std::chrono_literals;
 RacingNode::RacingNode()
     : Node("racing_node"),
       hasOdom_(false),
+      hasLaser_(false),
       currentGoal_(0),
       state_(MissionState::IDLE),
       running_(true)
@@ -220,11 +221,19 @@ void RacingNode::controlLoop()
             const double steering = computeSteering(odom, lookAhead);
 
             double throttle = CRUISE_THROTTLE;
+            double brake    = 0.0;
+
             if (dist < SLOW_ZONE_M) {
                 throttle = std::max(CRUISE_THROTTLE * (dist / SLOW_ZONE_M), 0.1);
             }
 
-            publishCommand(throttle, 0.0, steering);
+            if (cornerAhead(goals, currentGoal, odom)) {
+                throttle = std::min(throttle, CORNER_THROTTLE);
+                brake    = CORNER_BRAKE;
+                RCLCPP_INFO(this->get_logger(), "Corner ahead -- slowing.");
+            }
+
+            publishCommand(throttle, brake, steering);
             break;
         }
 
@@ -235,6 +244,27 @@ void RacingNode::controlLoop()
 
         rate.sleep();
     }
+}
+
+// Corner detection
+
+bool RacingNode::cornerAhead(const std::vector<geometry_msgs::msg::Point>& goals,
+                              std::size_t currentGoal,
+                              const nav_msgs::msg::Odometry& odom) const
+{
+    const double cx = odom.pose.pose.position.x;
+    const double cy = odom.pose.pose.position.y;
+
+    for (std::size_t k = currentGoal; k + 1 < goals.size(); ++k) {
+        const double dx = goals[k].x - cx;
+        const double dy = goals[k].y - cy;
+        if (std::sqrt(dx*dx + dy*dy) > CORNER_LOOKAHEAD_M) break;
+
+        const double bear1 = std::atan2(goals[k].y   - cy,         goals[k].x   - cx);
+        const double bear2 = std::atan2(goals[k+1].y - goals[k].y, goals[k+1].x - goals[k].x);
+        if (std::abs(normaliseAngle(bear2 - bear1)) > CORNER_ANGLE_THRESH) return true;
+    }
+    return false;
 }
 
 // Steering
