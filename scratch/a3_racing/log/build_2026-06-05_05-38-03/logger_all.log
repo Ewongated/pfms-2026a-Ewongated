@@ -1,0 +1,104 @@
+[0.159s] DEBUG:colcon:Command line arguments: ['/usr/bin/colcon', 'build', '--packages-select', 'a3_racing']
+[0.159s] DEBUG:colcon:Parsed command line arguments: Namespace(log_base=None, log_level=None, verb_name='build', build_base='build', install_base='install', merge_install=False, symlink_install=False, test_result_base=None, continue_on_error=False, executor='parallel', parallel_workers=8, event_handlers=None, ignore_user_meta=False, metas=['./colcon.meta'], base_paths=['.'], packages_ignore=None, packages_ignore_regex=None, paths=None, packages_up_to=None, packages_up_to_regex=None, packages_above=None, packages_above_and_dependencies=None, packages_above_depth=None, packages_select_by_dep=None, packages_skip_by_dep=None, packages_skip_up_to=None, packages_select_build_failed=False, packages_skip_build_finished=False, packages_select_test_failures=False, packages_skip_test_passed=False, packages_select=['a3_racing'], packages_skip=None, packages_select_regex=None, packages_skip_regex=None, packages_start=None, packages_end=None, allow_overriding=[], cmake_args=None, cmake_target=None, cmake_target_skip_unavailable=False, cmake_clean_cache=False, cmake_clean_first=False, cmake_force_configure=False, ament_cmake_args=None, catkin_cmake_args=None, catkin_skip_building_tests=False, mixin_files=None, mixin=None, verb_parser=<colcon_mixin.mixin.mixin_argument.MixinArgumentDecorator object at 0x7e7d66d563b0>, verb_extension=<colcon_core.verb.build.BuildVerb object at 0x7e7d66d55e40>, main=<bound method BuildVerb.main of <colcon_core.verb.build.BuildVerb object at 0x7e7d66d55e40>>, mixin_verb=('build',))
+[0.422s] Level 1:colcon.colcon_core.package_discovery:discover_packages(colcon_meta) check parameters
+[0.422s] Level 1:colcon.colcon_core.package_discovery:discover_packages(recursive) check parameters
+[0.422s] Level 1:colcon.colcon_core.package_discovery:discover_packages(ignore) check parameters
+[0.422s] Level 1:colcon.colcon_core.package_discovery:discover_packages(path) check parameters
+[0.422s] Level 1:colcon.colcon_core.package_discovery:discover_packages(colcon_meta) discover
+[0.422s] Level 1:colcon.colcon_core.package_discovery:discover_packages(recursive) discover
+[0.422s] INFO:colcon.colcon_core.package_discovery:Crawling recursively for packages in '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing'
+[0.422s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['ignore', 'ignore_ament_install']
+[0.422s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'ignore'
+[0.423s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'ignore_ament_install'
+[0.423s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['colcon_pkg']
+[0.423s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'colcon_pkg'
+[0.423s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['colcon_meta']
+[0.423s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'colcon_meta'
+[0.423s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['ros']
+[0.423s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'ros'
+[0.439s] DEBUG:colcon.colcon_core.package_identification:Package '.' with type 'ros.ament_cmake' and name 'a3_racing'
+[0.439s] Level 1:colcon.colcon_core.package_discovery:discover_packages(recursive) using defaults
+[0.439s] Level 1:colcon.colcon_core.package_discovery:discover_packages(ignore) discover
+[0.439s] Level 1:colcon.colcon_core.package_discovery:discover_packages(ignore) using defaults
+[0.439s] Level 1:colcon.colcon_core.package_discovery:discover_packages(path) discover
+[0.439s] Level 1:colcon.colcon_core.package_discovery:discover_packages(path) using defaults
+[0.478s] Level 1:colcon.colcon_core.package_discovery:discover_packages(prefix_path) check parameters
+[0.478s] Level 1:colcon.colcon_core.package_discovery:discover_packages(prefix_path) discover
+[0.480s] DEBUG:colcon.colcon_installed_package_information.package_discovery:Found 3 installed packages in /home/student/ros2_ws/install
+[0.482s] DEBUG:colcon.colcon_installed_package_information.package_discovery:Found 418 installed packages in /opt/ros/humble
+[0.484s] Level 1:colcon.colcon_core.package_discovery:discover_packages(prefix_path) using defaults
+[0.542s] Level 5:colcon.colcon_core.verb:set package 'a3_racing' build argument 'cmake_args' from command line to 'None'
+[0.542s] Level 5:colcon.colcon_core.verb:set package 'a3_racing' build argument 'cmake_target' from command line to 'None'
+[0.542s] Level 5:colcon.colcon_core.verb:set package 'a3_racing' build argument 'cmake_target_skip_unavailable' from command line to 'False'
+[0.542s] Level 5:colcon.colcon_core.verb:set package 'a3_racing' build argument 'cmake_clean_cache' from command line to 'False'
+[0.542s] Level 5:colcon.colcon_core.verb:set package 'a3_racing' build argument 'cmake_clean_first' from command line to 'False'
+[0.542s] Level 5:colcon.colcon_core.verb:set package 'a3_racing' build argument 'cmake_force_configure' from command line to 'False'
+[0.542s] Level 5:colcon.colcon_core.verb:set package 'a3_racing' build argument 'ament_cmake_args' from command line to 'None'
+[0.542s] Level 5:colcon.colcon_core.verb:set package 'a3_racing' build argument 'catkin_cmake_args' from command line to 'None'
+[0.542s] Level 5:colcon.colcon_core.verb:set package 'a3_racing' build argument 'catkin_skip_building_tests' from command line to 'False'
+[0.542s] DEBUG:colcon.colcon_core.verb:Building package 'a3_racing' with the following arguments: {'ament_cmake_args': None, 'build_base': '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/build/a3_racing', 'catkin_cmake_args': None, 'catkin_skip_building_tests': False, 'cmake_args': None, 'cmake_clean_cache': False, 'cmake_clean_first': False, 'cmake_force_configure': False, 'cmake_target': None, 'cmake_target_skip_unavailable': False, 'install_base': '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing', 'merge_install': False, 'path': '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing', 'symlink_install': False, 'test_result_base': None}
+[0.542s] INFO:colcon.colcon_core.executor:Executing jobs using 'parallel' executor
+[0.544s] DEBUG:colcon.colcon_parallel_executor.executor.parallel:run_until_complete
+[0.544s] INFO:colcon.colcon_ros.task.ament_cmake.build:Building ROS package in '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing' with build type 'ament_cmake'
+[0.544s] INFO:colcon.colcon_cmake.task.cmake.build:Building CMake package in '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing'
+[0.546s] INFO:colcon.colcon_core.plugin_system:Skipping extension 'colcon_core.shell.bat': Not used on non-Windows systems
+[0.547s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[0.547s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[0.560s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/build/a3_racing': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/humble /usr/bin/cmake --build /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/build/a3_racing -- -j8 -l8
+[29.005s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/build/a3_racing' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/humble /usr/bin/cmake --build /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/build/a3_racing -- -j8 -l8
+[29.019s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/build/a3_racing': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/humble /usr/bin/cmake --install /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/build/a3_racing
+[29.698s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(a3_racing)
+[29.700s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/build/a3_racing' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/humble /usr/bin/cmake --install /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/build/a3_racing
+[29.704s] Level 1:colcon.colcon_core.environment:checking '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing' for CMake module files
+[29.704s] Level 1:colcon.colcon_core.environment:checking '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing' for CMake config files
+[29.705s] Level 1:colcon.colcon_core.shell:create_environment_hook('a3_racing', 'cmake_prefix_path')
+[29.705s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/a3_racing/hook/cmake_prefix_path.ps1'
+[29.785s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/a3_racing/hook/cmake_prefix_path.dsv'
+[29.787s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/a3_racing/hook/cmake_prefix_path.sh'
+[29.788s] Level 1:colcon.colcon_core.environment:checking '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/lib'
+[29.789s] Level 1:colcon.colcon_core.environment:checking '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/bin'
+[29.789s] Level 1:colcon.colcon_core.environment:checking '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/lib/pkgconfig/a3_racing.pc'
+[29.789s] Level 1:colcon.colcon_core.environment:checking '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/lib/python3.10/site-packages'
+[29.789s] Level 1:colcon.colcon_core.environment:checking '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/bin'
+[29.790s] INFO:colcon.colcon_core.shell:Creating package script '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/a3_racing/package.ps1'
+[29.792s] INFO:colcon.colcon_core.shell:Creating package descriptor '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/a3_racing/package.dsv'
+[29.793s] INFO:colcon.colcon_core.shell:Creating package script '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/a3_racing/package.sh'
+[29.836s] INFO:colcon.colcon_core.shell:Creating package script '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/a3_racing/package.bash'
+[29.837s] INFO:colcon.colcon_core.shell:Creating package script '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/a3_racing/package.zsh'
+[29.839s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/colcon-core/packages/a3_racing)
+[29.841s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(a3_racing)
+[29.841s] Level 1:colcon.colcon_core.environment:checking '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing' for CMake module files
+[29.842s] Level 1:colcon.colcon_core.environment:checking '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing' for CMake config files
+[29.842s] Level 1:colcon.colcon_core.shell:create_environment_hook('a3_racing', 'cmake_prefix_path')
+[29.842s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/a3_racing/hook/cmake_prefix_path.ps1'
+[29.843s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/a3_racing/hook/cmake_prefix_path.dsv'
+[29.845s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/a3_racing/hook/cmake_prefix_path.sh'
+[29.866s] Level 1:colcon.colcon_core.environment:checking '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/lib'
+[29.866s] Level 1:colcon.colcon_core.environment:checking '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/bin'
+[29.866s] Level 1:colcon.colcon_core.environment:checking '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/lib/pkgconfig/a3_racing.pc'
+[29.868s] Level 1:colcon.colcon_core.environment:checking '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/lib/python3.10/site-packages'
+[29.868s] Level 1:colcon.colcon_core.environment:checking '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/bin'
+[29.869s] INFO:colcon.colcon_core.shell:Creating package script '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/a3_racing/package.ps1'
+[29.900s] INFO:colcon.colcon_core.shell:Creating package descriptor '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/a3_racing/package.dsv'
+[29.901s] INFO:colcon.colcon_core.shell:Creating package script '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/a3_racing/package.sh'
+[29.903s] INFO:colcon.colcon_core.shell:Creating package script '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/a3_racing/package.bash'
+[29.947s] INFO:colcon.colcon_core.shell:Creating package script '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/a3_racing/package.zsh'
+[29.949s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/colcon-core/packages/a3_racing)
+[29.951s] DEBUG:colcon.colcon_parallel_executor.executor.parallel:closing loop
+[29.951s] DEBUG:colcon.colcon_parallel_executor.executor.parallel:loop closed
+[29.951s] DEBUG:colcon.colcon_parallel_executor.executor.parallel:run_until_complete finished with '0'
+[29.952s] DEBUG:colcon.colcon_core.event_reactor:joining thread
+[29.962s] INFO:colcon.colcon_core.plugin_system:Skipping extension 'colcon_notification.desktop_notification.terminal_notifier': Not used on non-Darwin systems
+[29.963s] INFO:colcon.colcon_core.plugin_system:Skipping extension 'colcon_notification.desktop_notification.win32': Not used on non-Windows systems
+[29.963s] INFO:colcon.colcon_notification.desktop_notification:Sending desktop notification using 'notify2'
+[29.986s] DEBUG:colcon.colcon_core.event_reactor:joined thread
+[29.986s] INFO:colcon.colcon_core.shell:Creating prefix script '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/local_setup.ps1'
+[29.997s] INFO:colcon.colcon_core.shell:Creating prefix util module '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/_local_setup_util_ps1.py'
+[30.035s] INFO:colcon.colcon_core.shell:Creating prefix chain script '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/setup.ps1'
+[30.038s] INFO:colcon.colcon_core.shell:Creating prefix script '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/local_setup.sh'
+[30.073s] INFO:colcon.colcon_core.shell:Creating prefix util module '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/_local_setup_util_sh.py'
+[30.093s] INFO:colcon.colcon_core.shell:Creating prefix chain script '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/setup.sh'
+[30.177s] INFO:colcon.colcon_core.shell:Creating prefix script '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/local_setup.bash'
+[30.250s] INFO:colcon.colcon_core.shell:Creating prefix chain script '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/setup.bash'
+[30.398s] INFO:colcon.colcon_core.shell:Creating prefix script '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/local_setup.zsh'
+[30.443s] INFO:colcon.colcon_core.shell:Creating prefix chain script '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/setup.zsh'

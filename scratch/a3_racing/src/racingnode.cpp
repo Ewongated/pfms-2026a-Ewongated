@@ -1,13 +1,10 @@
 #include "racingnode.h"
-
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #include <cmath>
 #include <sstream>
 #include <iomanip>
 
 using namespace std::chrono_literals;
-
-// ── Constructor / Destructor ─────────────────────────────────────────────────
 
 RacingNode::RacingNode()
     : Node("racing_node"),
@@ -16,18 +13,16 @@ RacingNode::RacingNode()
       state_(MissionState::IDLE),
       running_(true)
 {
-    // ── Declare parameters ───────────────────────────────────────────────────
     this->declare_parameter<double>("goal_tolerance", 1.5);
-    this->declare_parameter<bool>  ("advanced",       false);
+    this->declare_parameter<bool>("advanced", false);
 
     goalTolerance_ = this->get_parameter("goal_tolerance").as_double();
     advanced_      = this->get_parameter("advanced").as_bool();
 
     RCLCPP_INFO(this->get_logger(),
-        "RacingNode starting — tolerance=%.2f advanced=%s",
+        "RacingNode starting -- tolerance=%.2f advanced=%s",
         goalTolerance_, advanced_ ? "true" : "false");
 
-    // ── Subscribers ──────────────────────────────────────────────────────────
     subOdom_ = this->create_subscription<nav_msgs::msg::Odometry>(
         "/orange/odom", 10,
         std::bind(&RacingNode::odomCallback, this, std::placeholders::_1));
@@ -40,29 +35,17 @@ RacingNode::RacingNode()
         "/orange/goals", 10,
         std::bind(&RacingNode::goalsCallback, this, std::placeholders::_1));
 
-    // ── Publishers ───────────────────────────────────────────────────────────
-    pubThrottle_ = this->create_publisher<std_msgs::msg::Float64>(
-        "/orange/throttle_cmd", 10);
+    pubThrottle_ = this->create_publisher<std_msgs::msg::Float64>("/orange/throttle_cmd", 10);
+    pubBrake_    = this->create_publisher<std_msgs::msg::Float64>("/orange/brake_cmd", 10);
+    pubSteering_ = this->create_publisher<std_msgs::msg::Float64>("/orange/steering_cmd", 10);
+    pubMarkers_  = this->create_publisher<visualization_msgs::msg::MarkerArray>("/visualisation_marker", 10);
+    pubWaypoints_= this->create_publisher<geometry_msgs::msg::PoseArray>("/orange/waypoints", 10);
 
-    pubBrake_ = this->create_publisher<std_msgs::msg::Float64>(
-        "/orange/brake_cmd", 10);
-
-    pubSteering_ = this->create_publisher<std_msgs::msg::Float64>(
-        "/orange/steering_cmd", 10);
-
-    pubMarkers_ = this->create_publisher<visualization_msgs::msg::MarkerArray>(
-        "/visualisation_marker", 10);
-
-    pubWaypoints_ = this->create_publisher<geometry_msgs::msg::PoseArray>(
-        "/orange/waypoints", 10);
-
-    // ── Service ──────────────────────────────────────────────────────────────
     service_ = this->create_service<std_srvs::srv::SetBool>(
         "/orange/mission",
         std::bind(&RacingNode::missionService, this,
                   std::placeholders::_1, std::placeholders::_2));
 
-    // ── Control thread ────────────────────────────────────────────────────────
     controlThread_ = std::thread(&RacingNode::controlLoop, this);
 
     RCLCPP_INFO(this->get_logger(), "RacingNode ready.");
@@ -74,42 +57,28 @@ RacingNode::~RacingNode()
     if (controlThread_.joinable()) controlThread_.join();
 }
 
-// ── Callbacks ────────────────────────────────────────────────────────────────
+// Callbacks
 
 void RacingNode::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg)
 {
-    {
-        std::lock_guard<std::mutex> lock(mutex_);
-        odom_    = *msg;
-        hasOdom_ = true;
-    }
-    // Forward to laser processing — laserProc_ may not exist yet on first call.
-    if (laserProc_) {
-        laserProc_->newOdom(*msg);
-    }
+    std::lock_guard<std::mutex> lock(mutex_);
+    odom_    = *msg;
+    hasOdom_ = true;
 }
 
 void RacingNode::laserCallback(const sensor_msgs::msg::LaserScan::SharedPtr msg)
 {
-    if (!laserProc_) {
-        // First scan — create the LaserProcessing object.
-        laserProc_ = std::make_unique<LaserProcessing>(*msg);
-        // If we already have odom, give it to the new object.
-        std::lock_guard<std::mutex> lock(mutex_);
-        if (hasOdom_) laserProc_->newOdom(odom_);
-    } else {
-        laserProc_->newScan(*msg);
-    }
+    std::lock_guard<std::mutex> lock(mutex_);
+    laser_    = *msg;
+    hasLaser_ = true;
 }
 
 void RacingNode::goalsCallback(const geometry_msgs::msg::PoseArray::SharedPtr msg)
 {
     std::lock_guard<std::mutex> lock(mutex_);
 
-    // Only update goals when IDLE so a live mission is not disrupted.
     if (state_ != MissionState::IDLE && state_ != MissionState::COMPLETE) {
-        RCLCPP_WARN(this->get_logger(),
-            "Goals received while mission active — ignored. Stop mission first.");
+        RCLCPP_WARN(this->get_logger(), "Goals received while active -- ignored.");
         return;
     }
 
@@ -118,9 +87,7 @@ void RacingNode::goalsCallback(const geometry_msgs::msg::PoseArray::SharedPtr ms
         goals_.push_back(pose.position);
     }
     currentGoal_ = 0;
-
-    RCLCPP_INFO(this->get_logger(),
-        "Received %zu goals.", goals_.size());
+    RCLCPP_INFO(this->get_logger(), "Received %zu goals.", goals_.size());
 }
 
 void RacingNode::missionService(
@@ -130,55 +97,38 @@ void RacingNode::missionService(
     std::lock_guard<std::mutex> lock(mutex_);
 
     if (req->data) {
-        // ── Start mission ────────────────────────────────────────────────────
         if (goals_.empty()) {
             res->success = false;
-            res->message = "No goals available. Publish goals to /orange/goals first.";
+            res->message = "No goals available.";
             return;
         }
-
-        if (state_ == MissionState::NAVIGATING || state_ == MissionState::STOPPED) {
+        if (state_ == MissionState::NAVIGATING) {
             res->success = true;
-            res->message = "Mission already running.";
+            res->message = "Already running.";
             return;
         }
-
-        // Reset goal index when starting fresh (not resuming from STOPPED).
-        if (state_ == MissionState::IDLE) {
-            currentGoal_ = 0;
-            waypoints_.clear();
-        }
-
+        currentGoal_ = 0;
+        waypoints_.clear();
         state_ = MissionState::NAVIGATING;
-        RCLCPP_INFO(this->get_logger(),
-            "Mission STARTED — %zu goals.", goals_.size());
-
+        RCLCPP_INFO(this->get_logger(), "Mission STARTED -- %zu goals.", goals_.size());
     } else {
-        // ── Stop mission ─────────────────────────────────────────────────────
         state_ = MissionState::IDLE;
-        RCLCPP_INFO(this->get_logger(), "Mission STOPPED by service call.");
+        RCLCPP_INFO(this->get_logger(), "Mission STOPPED.");
     }
 
-    // Build response.
-    const bool nearCentre = [&]() -> bool {
-        if (!hasOdom_ || goals_.empty() || currentGoal_ >= goals_.size()) return false;
-        if (!laserProc_) return false;
-        return laserProc_->goalInCorridor(goals_[currentGoal_]);
-    }();
-
     const std::size_t total     = goals_.size();
-    const std::size_t completed = (state_ == MissionState::COMPLETE) ? total : currentGoal_;
+    const std::size_t completed = currentGoal_;
     const double pct = total > 0 ? (static_cast<double>(completed) / total * 100.0) : 0.0;
 
     std::ostringstream ss;
     ss << std::fixed << std::setprecision(1) << pct
-       << "% complete (goal " << completed << "/" << total << ")";
+       << "% complete (" << completed << "/" << total << ")";
 
-    res->success = nearCentre;
+    res->success = true;
     res->message = ss.str();
 }
 
-// ── Control thread ────────────────────────────────────────────────────────────
+// Control loop
 
 void RacingNode::controlLoop()
 {
@@ -186,11 +136,11 @@ void RacingNode::controlLoop()
 
     while (running_.load() && rclcpp::ok()) {
 
-        // Snapshot shared state for this iteration.
-        nav_msgs::msg::Odometry            odom;
-        MissionState                       state;
+        nav_msgs::msg::Odometry odom;
+        MissionState state;
         std::vector<geometry_msgs::msg::Point> goals;
-        std::size_t                        currentGoal;
+        std::size_t currentGoal;
+        bool haveOdom;
 
         {
             std::lock_guard<std::mutex> lock(mutex_);
@@ -198,36 +148,23 @@ void RacingNode::controlLoop()
             state       = state_;
             goals       = goals_;
             currentGoal = currentGoal_;
+            haveOdom    = hasOdom_;
         }
 
         switch (state) {
 
-        // ── IDLE ─────────────────────────────────────────────────────────────
         case MissionState::IDLE:
             publishStop();
             break;
 
-        // ── NAVIGATING ───────────────────────────────────────────────────────
         case MissionState::NAVIGATING: {
-            if (!hasOdom_ || !laserProc_) {
-                publishStop();
-                break;
-            }
-
-            // Check for non-wall obstacle in the forward corridor.
-            if (laserProc_->obstacleInFront()) {
-                RCLCPP_WARN(this->get_logger(), "Obstacle detected — stopping.");
-                {
-                    std::lock_guard<std::mutex> lock(mutex_);
-                    state_ = MissionState::STOPPED;
-                }
+            if (!haveOdom) {
                 publishStop();
                 break;
             }
 
             if (currentGoal >= goals.size()) {
-                // All goals visited.
-                RCLCPP_INFO(this->get_logger(), "All goals reached — mission COMPLETE.");
+                RCLCPP_INFO(this->get_logger(), "All goals reached -- COMPLETE.");
                 publishStop();
                 publishWaypoints();
                 std::lock_guard<std::mutex> lock(mutex_);
@@ -236,41 +173,23 @@ void RacingNode::controlLoop()
             }
 
             const geometry_msgs::msg::Point& goal = goals[currentGoal];
-
-            // In D/HD mode, also check for laser-derived waypoints ahead.
-            if (advanced_ && laserProc_) {
-                auto centre = laserProc_->trackCentreAhead();
-                if (centre.has_value()) {
-                    std::lock_guard<std::mutex> lock(mutex_);
-                    // Store waypoint if it is far enough from the last stored one.
-                    bool addWp = waypoints_.empty();
-                    if (!addWp) {
-                        const auto& last = waypoints_.back();
-                        const double dx = centre->x - last.x;
-                        const double dy = centre->y - last.y;
-                        addWp = std::sqrt(dx*dx + dy*dy) >= WAYPOINT_SPACING_M;
-                    }
-                    if (addWp) {
-                        waypoints_.push_back(*centre);
-                    }
-                }
-            }
-
-            // Validate goal is within the free corridor (P/C requirement).
-            const bool inCorridor = laserProc_->goalInCorridor(goal);
-            if (!inCorridor) {
-                RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 2000,
-                    "Goal %zu not in corridor — continuing towards it.", currentGoal);
-            }
-
-            // Distance to goal.
             const double dist = euclidean(odom, goal);
 
-            if (dist < goalTolerance_) {
-                RCLCPP_INFO(this->get_logger(),
-                    "Goal %zu reached (dist=%.2f m).", currentGoal, dist);
+            // Overshoot detection
+            const double yaw     = yawFromOdom(odom);
+            const double toGoalX = goal.x - odom.pose.pose.position.x;
+            const double toGoalY = goal.y - odom.pose.pose.position.y;
+            const double dot     = toGoalX * std::cos(yaw) + toGoalY * std::sin(yaw);
+            const bool overshot  = (dot < 0.0) && (dist > goalTolerance_);
 
-                // Store waypoint at goal position.
+            RCLCPP_INFO(this->get_logger(),
+                "Goal %zu | dist=%.2f | dot=%.2f | overshot=%d",
+                currentGoal, dist, dot, overshot ? 1 : 0);
+
+            if (dist < goalTolerance_ || overshot) {
+                if (overshot) RCLCPP_WARN(this->get_logger(), "Goal %zu overshot -- skipping.", currentGoal);
+                else          RCLCPP_INFO(this->get_logger(), "Goal %zu reached.", currentGoal);
+
                 {
                     std::lock_guard<std::mutex> lock(mutex_);
                     waypoints_.push_back(goal);
@@ -280,31 +199,35 @@ void RacingNode::controlLoop()
                 break;
             }
 
-            // Compute steering and publish motion command.
-            const double steering = computeSteering(odom, goal);
+            // Pure Pursuit -- find look-ahead point
+            const double cx = odom.pose.pose.position.x;
+            const double cy = odom.pose.pose.position.y;
+            geometry_msgs::msg::Point lookAhead = goal;
+            std::size_t lookAheadIdx = currentGoal;
 
-            // Throttle tapers as we approach the goal.
+            for (std::size_t k = currentGoal; k < goals.size(); ++k) {
+                const double dx = goals[k].x - cx;
+                const double dy = goals[k].y - cy;
+                lookAhead    = goals[k];
+                lookAheadIdx = k;
+                if (std::sqrt(dx*dx + dy*dy) >= LOOKAHEAD_M) break;
+            }
+
+            RCLCPP_INFO(this->get_logger(),
+                "Look-ahead -> goal %zu (%.2f, %.2f)",
+                lookAheadIdx, lookAhead.x, lookAhead.y);
+
+            const double steering = computeSteering(odom, lookAhead);
+
             double throttle = CRUISE_THROTTLE;
             if (dist < SLOW_ZONE_M) {
-                throttle = CRUISE_THROTTLE * (dist / SLOW_ZONE_M);
-                throttle = std::max(throttle, 0.1); // keep minimum creep
+                throttle = std::max(CRUISE_THROTTLE * (dist / SLOW_ZONE_M), 0.1);
             }
 
             publishCommand(throttle, 0.0, steering);
             break;
         }
 
-        // ── STOPPED (obstacle) ────────────────────────────────────────────────
-        case MissionState::STOPPED:
-            publishStop();
-            if (laserProc_ && !laserProc_->obstacleInFront()) {
-                RCLCPP_INFO(this->get_logger(), "Obstacle cleared — resuming.");
-                std::lock_guard<std::mutex> lock(mutex_);
-                state_ = MissionState::NAVIGATING;
-            }
-            break;
-
-        // ── COMPLETE ──────────────────────────────────────────────────────────
         case MissionState::COMPLETE:
             publishStop();
             break;
@@ -314,17 +237,27 @@ void RacingNode::controlLoop()
     }
 }
 
-// ── Motion helpers ────────────────────────────────────────────────────────────
+// Steering
 
 double RacingNode::computeSteering(const nav_msgs::msg::Odometry& odom,
-                                   const geometry_msgs::msg::Point& goal) const
+                                   const geometry_msgs::msg::Point& lookAhead) const
 {
-    const double yaw     = yawFromOdom(odom);
-    const double bearing = std::atan2(goal.y - odom.pose.pose.position.y,
-                                      goal.x - odom.pose.pose.position.x);
-    const double error   = normaliseAngle(bearing - yaw);
-    const double steer   = std::clamp(STEER_GAIN * error, -MAX_STEER, MAX_STEER);
-    return steer;
+    const double yaw = yawFromOdom(odom);
+    const double cx  = odom.pose.pose.position.x;
+    const double cy  = odom.pose.pose.position.y;
+
+    const double dx = lookAhead.x - cx;
+    const double dy = lookAhead.y - cy;
+    const double ld = std::sqrt(dx*dx + dy*dy);
+
+    if (ld < 1e-6) return 0.0;
+
+    const double localX =  dx * std::cos(-yaw) - dy * std::sin(-yaw);
+    const double localY =  dx * std::sin(-yaw) + dy * std::cos(-yaw);
+    const double alpha  = std::atan2(localY, localX);
+
+    const double steer = std::atan2(2.0 * WHEELBASE_M * std::sin(alpha), ld);
+    return std::clamp(steer, -MAX_STEER, MAX_STEER);
 }
 
 void RacingNode::publishStop()
@@ -334,16 +267,16 @@ void RacingNode::publishStop()
 
 void RacingNode::publishCommand(double throttle, double brake, double steering)
 {
-    std_msgs::msg::Float64 tMsg, bMsg, sMsg;
-    tMsg.data = throttle;
-    bMsg.data = brake;
-    sMsg.data = steering;
-    pubThrottle_->publish(tMsg);
-    pubBrake_->publish(bMsg);
-    pubSteering_->publish(sMsg);
+    std_msgs::msg::Float64 t, b, s;
+    t.data = throttle;
+    b.data = brake;
+    s.data = steering;
+    pubThrottle_->publish(t);
+    pubBrake_->publish(b);
+    pubSteering_->publish(s);
 }
 
-// ── Visualisation ─────────────────────────────────────────────────────────────
+// Waypoints
 
 void RacingNode::publishWaypoints()
 {
@@ -352,36 +285,45 @@ void RacingNode::publishWaypoints()
         std::lock_guard<std::mutex> lock(mutex_);
         wps = waypoints_;
     }
-
     if (wps.empty()) return;
 
     const rclcpp::Time now = this->get_clock()->now();
-
     visualization_msgs::msg::MarkerArray markerArray;
-    geometry_msgs::msg::PoseArray        poseArray;
+    geometry_msgs::msg::PoseArray poseArray;
     poseArray.header.stamp    = now;
     poseArray.header.frame_id = "world";
 
     for (std::size_t i = 0; i < wps.size(); ++i) {
-        // Orientation of this waypoint points toward the next one.
-        double yaw = 0.0;
+        double wpYaw = 0.0;
         if (i + 1 < wps.size()) {
-            yaw = std::atan2(wps[i+1].y - wps[i].y,
-                             wps[i+1].x - wps[i].x);
+            wpYaw = std::atan2(wps[i+1].y - wps[i].y, wps[i+1].x - wps[i].x);
         } else if (i > 0) {
-            yaw = std::atan2(wps[i].y - wps[i-1].y,
-                             wps[i].x - wps[i-1].x);
+            wpYaw = std::atan2(wps[i].y - wps[i-1].y, wps[i].x - wps[i-1].x);
         }
 
-        // Marker.
-        markerArray.markers.push_back(
-            makeWaypointMarker(wps[i], static_cast<int>(i), yaw, now));
-
-        // Pose for PoseArray.
-        geometry_msgs::msg::Pose pose;
-        pose.position = wps[i];
+        visualization_msgs::msg::Marker m;
+        m.header.frame_id = "world";
+        m.header.stamp    = now;
+        m.ns              = "road";
+        m.id              = static_cast<int>(i);
+        m.type            = visualization_msgs::msg::Marker::CYLINDER;
+        m.action          = visualization_msgs::msg::Marker::ADD;
+        m.lifetime        = rclcpp::Duration(0, 0);
+        m.pose.position   = wps[i];
         tf2::Quaternion q;
-        q.setRPY(0.0, 0.0, yaw);
+        q.setRPY(0.0, 0.0, wpYaw);
+        m.pose.orientation = tf2::toMsg(q);
+        m.scale.x = 0.4;
+        m.scale.y = 0.4;
+        m.scale.z = 0.5;
+        m.color.r = 0.0f;
+        m.color.g = 0.8f;
+        m.color.b = 0.2f;
+        m.color.a = 0.8f;
+        markerArray.markers.push_back(m);
+
+        geometry_msgs::msg::Pose pose;
+        pose.position    = wps[i];
         pose.orientation = tf2::toMsg(q);
         poseArray.poses.push_back(pose);
     }
@@ -390,45 +332,13 @@ void RacingNode::publishWaypoints()
     pubWaypoints_->publish(poseArray);
 }
 
-visualization_msgs::msg::Marker RacingNode::makeWaypointMarker(
-    const geometry_msgs::msg::Point& pt,
-    int id,
-    double yaw_rad,
-    const rclcpp::Time& stamp) const
-{
-    visualization_msgs::msg::Marker m;
-    m.header.frame_id = "world";
-    m.header.stamp    = stamp;
-    m.ns              = "road";
-    m.id              = id;
-    m.type            = visualization_msgs::msg::Marker::CYLINDER;
-    m.action          = visualization_msgs::msg::Marker::ADD;
-    m.lifetime        = rclcpp::Duration(0, 0); // persist until replaced
-
-    m.pose.position = pt;
-    tf2::Quaternion q;
-    q.setRPY(0.0, 0.0, yaw_rad);
-    m.pose.orientation = tf2::toMsg(q);
-
-    m.scale.x = 0.4;  // diameter = 2 × radius 0.2 m
-    m.scale.y = 0.4;
-    m.scale.z = 0.5;  // height 0.5 m
-
-    m.color.r = 0.0f;
-    m.color.g = 0.8f;
-    m.color.b = 0.2f;
-    m.color.a = 0.8f;
-
-    return m;
-}
-
-// ── Static utilities ──────────────────────────────────────────────────────────
+// Static helpers
 
 double RacingNode::yawFromOdom(const nav_msgs::msg::Odometry& odom)
 {
-    const auto& q      = odom.pose.pose.orientation;
-    const double siny  = 2.0 * (q.w * q.z + q.x * q.y);
-    const double cosy  = 1.0 - 2.0 * (q.y * q.y + q.z * q.z);
+    const auto& q     = odom.pose.pose.orientation;
+    const double siny = 2.0 * (q.w * q.z + q.x * q.y);
+    const double cosy = 1.0 - 2.0 * (q.y * q.y + q.z * q.z);
     return std::atan2(siny, cosy);
 }
 

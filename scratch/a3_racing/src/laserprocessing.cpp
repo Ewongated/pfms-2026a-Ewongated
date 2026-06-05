@@ -4,7 +4,7 @@
 #include <cmath>
 #include <numeric>
 
-// ── Constructor / scan management ────────────────────────────────────────────
+// ?? Constructor / scan management ????????????????????????????????????????????
 
 LaserProcessing::LaserProcessing(sensor_msgs::msg::LaserScan laserScan)
     : laserScan_(laserScan), hasOdom_(false)
@@ -24,41 +24,98 @@ void LaserProcessing::newOdom(nav_msgs::msg::Odometry odom)
     hasOdom_ = true;
 }
 
-// ── Public analysis functions ─────────────────────────────────────────────────
+// ?? Public analysis functions ?????????????????????????????????????????????????
 
 bool LaserProcessing::obstacleInFront() const
 {
-    // Take a consistent snapshot to avoid holding the lock during computation.
+    // ?? Algorithm overview ????????????????????????????????????????????????????
+    // The track has walls on both sides at ~8m total width (~4m each side).
+    // Walls appear as long continuous segments spanning many rays.
+    // A real obstacle (box, person, stopped vehicle) appears as a SHORT cluster
+    // of close readings in the CENTRE of the scan, clearly separated from the
+    // wall segments.
+    //
+    // Strategy:
+    //  1. Estimate the expected wall range by taking the median of readings in
+    //     the outer thirds of the scan (left and right side sectors).
+    //  2. In the forward centre sector, look for a cluster of readings that are
+    //     significantly closer than the estimated wall range.
+    //  3. A "cluster" requires MIN_OBSTACLE_RAYS consecutive close readings --
+    //     this rejects single noisy returns from the wall edge at corners.
+
     std::unique_lock<std::mutex> lock(mtx_);
     const sensor_msgs::msg::LaserScan scan = laserScan_;
     lock.unlock();
 
     if (scan.ranges.empty()) return false;
 
-    // Identify the index of the scan centre (0° in sensor frame for a
-    // symmetric scan centred on the forward direction).
-    const double angleIncrement = scan.angle_increment;
-    const double halfConeRad    = OBSTACLE_HALF_ANGLE_DEG * M_PI / 180.0;
+    const int    nRays = static_cast<int>(scan.ranges.size());
+    const double aMin  = scan.angle_min;
+    const double aInc  = scan.angle_increment;
 
-    // Centre index where angle ≈ 0 (forward).
-    // For a 180° scan: angle_min ≈ -π/2, centre ≈ 0 rad.
-    const int nRays = static_cast<int>(scan.ranges.size());
+    // ?? Step 1: Estimate wall range from side sectors ?????????????????????????
+    // Use rays exclusively in the far side sectors (beyond ?75 deg from forward).
+    // At ?75 deg the laser is pointing nearly sideways at the wall -- these readings
+    // represent the true wall proximity and are unaffected by forward obstacles.
+    constexpr double SIDE_SECTOR_DEG = 75.0;
+    const double sideSectorRad = SIDE_SECTOR_DEG * M_PI / 180.0;
+
+    std::vector<float> sideRanges;
+    sideRanges.reserve(64);
 
     for (int i = 0; i < nRays; ++i) {
-        const double angle = scan.angle_min + i * angleIncrement;
-
-        // Only consider rays inside the forward cone.
-        if (std::abs(angle) > halfConeRad) continue;
-
+        const double angle = aMin + i * aInc;
+        if (std::abs(angle) < sideSectorRad) continue; // skip forward sector
         const float r = scan.ranges[i];
         if (!std::isfinite(r) || r <= scan.range_min || r >= scan.range_max) continue;
+        sideRanges.push_back(r);
+    }
 
-        // A reading significantly shorter than the expected wall distance
-        // indicates a non-wall obstacle.
-        if (r < WALL_MIN_RANGE_M) {
-            return true;
+    // Need enough side readings to estimate wall range reliably.
+    if (sideRanges.size() < 6) {
+        // Not enough data -- fail safe (assume no obstacle).
+        return false;
+    }
+
+    std::sort(sideRanges.begin(), sideRanges.end());
+    const float wallRange = sideRanges[sideRanges.size() / 2]; // median
+
+    // Obstacle threshold: anything closer than (wallRange * fraction) in the
+    // forward sector that the wall cannot explain.
+    // Apply a minimum absolute floor so the threshold never drops dangerously
+    // low even when walls are very close (e.g. tight corners).
+    const float obstacleThreshold = std::max(
+        wallRange * static_cast<float>(OBSTACLE_WALL_FRACTION),
+        static_cast<float>(OBSTACLE_MIN_RANGE_M));
+
+    // ?? Step 2: Scan forward centre sector for close cluster ?????????????????
+    const double halfConeRad = OBSTACLE_HALF_ANGLE_DEG * M_PI / 180.0;
+    unsigned int consecutiveClose = 0;
+
+    for (int i = 0; i < nRays; ++i) {
+        const double angle = aMin + i * aInc;
+        if (std::abs(angle) > halfConeRad) {
+            consecutiveClose = 0; // reset counter outside forward cone
+            continue;
+        }
+
+        const float r = scan.ranges[i];
+        if (!std::isfinite(r) || r <= scan.range_min || r >= scan.range_max) {
+            consecutiveClose = 0;
+            continue;
+        }
+
+        if (r < obstacleThreshold) {
+            ++consecutiveClose;
+            // Require a cluster of consecutive close rays to confirm obstacle.
+            if (consecutiveClose >= MIN_OBSTACLE_RAYS) {
+                return true;
+            }
+        } else {
+            consecutiveClose = 0;
         }
     }
+
     return false;
 }
 
@@ -210,7 +267,7 @@ unsigned int LaserProcessing::countSegments() const
     return segmentCount;
 }
 
-// ── Private helpers ──────────────────────────────────────────────────────────
+// ?? Private helpers ??????????????????????????????????????????????????????????
 
 geometry_msgs::msg::Point LaserProcessing::polarToCart(unsigned int index) const
 {

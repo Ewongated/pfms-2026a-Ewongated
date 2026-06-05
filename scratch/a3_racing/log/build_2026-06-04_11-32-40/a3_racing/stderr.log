@@ -1,0 +1,4 @@
+[01m[K/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/src/laserprocessing.cpp:[m[K In member function ‘[01m[Kbool LaserProcessing::obstacleInFront() const[m[K’:
+[01m[K/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/src/laserprocessing.cpp:105:34:[m[K [01;35m[Kwarning: [m[Kcomparison of integer expressions of different signedness: ‘[01m[Kint[m[K’ and ‘[01m[Kconst unsigned int[m[K’ [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wsign-compare-Wsign-compare]8;;[m[K]
+  105 |             if ([01;35m[KconsecutiveClose >= MIN_OBSTACLE_RAYS[m[K) {
+      |                 [01;35m[K~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~[m[K

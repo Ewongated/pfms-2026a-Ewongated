@@ -1,0 +1,385 @@
+[0.000000] (-) TimerEvent: {}
+[0.001193] (a3_racing) JobQueued: {'identifier': 'a3_racing', 'dependencies': OrderedDict()}
+[0.002065] (a3_racing) JobStarted: {'identifier': 'a3_racing'}
+[0.022812] (a3_racing) JobProgress: {'identifier': 'a3_racing', 'progress': 'cmake'}
+[0.035751] (a3_racing) JobProgress: {'identifier': 'a3_racing', 'progress': 'build'}
+[0.036152] (a3_racing) Command: {'cmd': ['/usr/bin/cmake', '--build', '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/build/a3_racing', '--', '-j8', '-l8'], 'cwd': '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/build/a3_racing', 'env': OrderedDict([('GJS_DEBUG_TOPICS', 'JS ERROR;JS LOG'), ('PYTHON_BASIC_REPL', '1'), ('LESSOPEN', '| /usr/bin/lesspipe %s'), ('GZ_SIM_RESOURCE_PATH', '/opt/ros/humble/share'), ('USER', 'student'), ('SSH_AGENT_PID', '1998'), ('XDG_SESSION_TYPE', 'x11'), ('GIT_ASKPASS', '/usr/share/code/resources/app/extensions/git/dist/askpass.sh'), ('SHLVL', '1'), ('LD_LIBRARY_PATH', '/opt/ros/humble/opt/rviz_ogre_vendor/lib:/opt/ros/humble/lib/x86_64-linux-gnu:/opt/ros/humble/lib'), ('HOME', '/home/student'), ('CHROME_DESKTOP', 'code.desktop'), ('TERM_PROGRAM_VERSION', '1.109.0'), ('GIO_LAUNCHED_DESKTOP_FILE', '/usr/share/applications/code.desktop'), ('ROS_PYTHON_VERSION', '3'), ('GNOME_SHELL_SESSION_MODE', 'ubuntu'), ('GTK_MODULES', 'gail:atk-bridge'), ('VSCODE_GIT_ASKPASS_MAIN', '/usr/share/code/resources/app/extensions/git/dist/askpass-main.js'), ('VSCODE_GIT_ASKPASS_NODE', '/usr/share/code/code'), ('MANAGERPID', '1886'), ('PYDEVD_DISABLE_FILE_VALIDATION', '1'), ('SYSTEMD_EXEC_PID', '2110'), ('BUNDLED_DEBUGPY_PATH', '/home/student/.vscode/extensions/ms-python.debugpy-2026.6.0-linux-x64/bundled/libs/debugpy'), ('XRDP_PULSE_SOURCE_SOCKET', 'xrdp_chansrv_audio_in_socket_10'), ('VSCODE_PYTHON_AUTOACTIVATE_GUARD', '1'), ('XRDP_PULSE_SINK_SOCKET', 'xrdp_chansrv_audio_out_socket_10'), ('DBUS_SESSION_BUS_ADDRESS', 'unix:path=/run/user/1002/bus'), ('COLORTERM', 'truecolor'), ('GIO_LAUNCHED_DESKTOP_FILE_PID', '2601'), ('PULSE_SCRIPT', '/etc/xrdp/pulse/default.pa'), ('IM_CONFIG_PHASE', '1'), ('COLCON_PREFIX_PATH', '/home/student/ros2_ws/install'), ('ROS_DISTRO', 'humble'), ('GTK_IM_MODULE', 'ibus'), ('LOGNAME', 'student'), ('JOURNAL_STREAM', '8:20350'), ('_', '/usr/bin/colcon'), ('ROS_VERSION', '2'), ('XDG_SESSION_CLASS', 'user'), ('TERM', 'xterm-256color'), ('GNOME_DESKTOP_SESSION_ID', 'this-is-deprecated'), ('FC_FONTATIONS', '1'), ('ROS_LOCALHOST_ONLY', '0'), ('PATH', '/opt/ros/humble/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/home/student/.vscode/extensions/ms-python.debugpy-2026.6.0-linux-x64/bundled/scripts/noConfigScripts'), ('SESSION_MANAGER', 'local/labNVXMF8:@/tmp/.ICE-unix/2087,unix/labNVXMF8:/tmp/.ICE-unix/2087'), ('INVOCATION_ID', '2d5173207c3940b3976a846632225047'), ('XDG_MENU_PREFIX', 'gnome-'), ('XRDP_SOCKET_PATH', '/run/xrdp/sockdir'), ('XDG_RUNTIME_DIR', '/run/user/1002'), ('GDK_BACKEND', 'x11'), ('DISPLAY', ':10.0'), ('VSCODE_DEBUGPY_ADAPTER_ENDPOINTS', '/home/student/.vscode/extensions/ms-python.debugpy-2026.6.0-linux-x64/.noConfigDebugAdapterEndpoints/endpoint-42827fad0e9cc8ef.txt'), ('LANG', 'C.UTF-8'), ('XDG_CURRENT_DESKTOP', 'ubuntu:GNOME'), ('PYTHONSTARTUP', '/home/student/.config/Code/User/workspaceStorage/6fcafe2dd31d46d032427cdc7c97a12c/ms-python.python/pythonrc.py'), ('XMODIFIERS', '@im=ibus'), ('LS_COLORS', 'rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=00:su=37;41:sg=30;43:ca=30;41:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arc=01;31:*.arj=01;31:*.taz=01;31:*.lha=01;31:*.lz4=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.tzo=01;31:*.t7z=01;31:*.zip=01;31:*.z=01;31:*.dz=01;31:*.gz=01;31:*.lrz=01;31:*.lz=01;31:*.lzo=01;31:*.xz=01;31:*.zst=01;31:*.tzst=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.alz=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.cab=01;31:*.wim=01;31:*.swm=01;31:*.dwm=01;31:*.esd=01;31:*.jpg=01;35:*.jpeg=01;35:*.mjpg=01;35:*.mjpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.webp=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.m4a=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.oga=00;36:*.opus=00;36:*.spx=00;36:*.xspf=00;36:'), ('VSCODE_GIT_IPC_HANDLE', '/run/user/1002/vscode-git-b0f58d027f.sock'), ('TERM_PROGRAM', 'vscode'), ('SSH_AUTH_SOCK', '/run/user/1002/keyring/ssh'), ('AMENT_PREFIX_PATH', '/home/student/ros2_ws/install/quiz5:/home/student/ros2_ws/install/a3_support:/home/student/ros2_ws/install/a3_racing:/opt/ros/humble'), ('UID', '1002'), ('SHELL', '/bin/bash'), ('QT_ACCESSIBILITY', '1'), ('LESSCLOSE', '/usr/bin/lesspipe %s %s'), ('XRDP_SESSION', '1'), ('GPG_AGENT_INFO', '/run/user/1002/gnupg/S.gpg-agent:0:1'), ('GAZEBO_RESOURCE_PATH', '/usr/share/gazebo-11/'), ('GJS_DEBUG_OUTPUT', 'stderr'), ('VSCODE_GIT_ASKPASS_EXTRA_ARGS', ''), ('QT_IM_MODULE', 'ibus'), ('PWD', '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/build/a3_racing'), ('XDG_DATA_DIRS', '/usr/share/gnome:/usr/share/ubuntu:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop'), ('PYTHONPATH', '/opt/ros/humble/lib/python3.10/site-packages:/opt/ros/humble/local/lib/python3.10/dist-packages'), ('SGX_AESM_ADDR', '1'), ('COLCON', '1'), ('CMAKE_PREFIX_PATH', '/home/student/ros2_ws/install/quiz5:/home/student/ros2_ws/install/a3_support:/home/student/ros2_ws/install/a3_racing:/opt/ros/humble')]), 'shell': False}
+[0.099924] (-) TimerEvent: {}
+[0.188900] (a3_racing) StdoutLine: {'line': b'\x1b[35m\x1b[1mConsolidate compiler generated dependencies of target laserprocessing\x1b[0m\n'}
+[0.200065] (-) TimerEvent: {}
+[0.218285] (a3_racing) StdoutLine: {'line': b'[ 18%] Built target laserprocessing\n'}
+[0.245063] (a3_racing) StdoutLine: {'line': b'\x1b[35m\x1b[1mConsolidate compiler generated dependencies of target gtest\x1b[0m\n'}
+[0.302750] (-) TimerEvent: {}
+[0.334658] (a3_racing) StdoutLine: {'line': b'[ 36%] Built target gtest\n'}
+[0.383570] (a3_racing) StdoutLine: {'line': b'\x1b[35m\x1b[1mConsolidate compiler generated dependencies of target racing_node\x1b[0m\n'}
+[0.404813] (-) TimerEvent: {}
+[0.470892] (a3_racing) StdoutLine: {'line': b'[ 45%] \x1b[32mBuilding CXX object CMakeFiles/racing_node.dir/src/racingnode.cpp.o\x1b[0m\n'}
+[0.504960] (-) TimerEvent: {}
+[0.606015] (-) TimerEvent: {}
+[0.708194] (-) TimerEvent: {}
+[0.808834] (-) TimerEvent: {}
+[0.910704] (-) TimerEvent: {}
+[1.019206] (-) TimerEvent: {}
+[1.122940] (-) TimerEvent: {}
+[1.225786] (-) TimerEvent: {}
+[1.326819] (-) TimerEvent: {}
+[1.430757] (-) TimerEvent: {}
+[1.533782] (-) TimerEvent: {}
+[1.634309] (-) TimerEvent: {}
+[1.734782] (-) TimerEvent: {}
+[1.835268] (-) TimerEvent: {}
+[1.936659] (-) TimerEvent: {}
+[2.037410] (-) TimerEvent: {}
+[2.159870] (-) TimerEvent: {}
+[2.260338] (-) TimerEvent: {}
+[2.364749] (-) TimerEvent: {}
+[2.465292] (-) TimerEvent: {}
+[2.570759] (-) TimerEvent: {}
+[2.676691] (-) TimerEvent: {}
+[2.781880] (-) TimerEvent: {}
+[2.883756] (-) TimerEvent: {}
+[2.984343] (-) TimerEvent: {}
+[3.086001] (-) TimerEvent: {}
+[3.188280] (-) TimerEvent: {}
+[3.289970] (-) TimerEvent: {}
+[3.390713] (-) TimerEvent: {}
+[3.493679] (-) TimerEvent: {}
+[3.594632] (-) TimerEvent: {}
+[3.697621] (-) TimerEvent: {}
+[3.800203] (-) TimerEvent: {}
+[3.912749] (-) TimerEvent: {}
+[4.013237] (-) TimerEvent: {}
+[4.113990] (-) TimerEvent: {}
+[4.214401] (-) TimerEvent: {}
+[4.318821] (-) TimerEvent: {}
+[4.419375] (-) TimerEvent: {}
+[4.520793] (-) TimerEvent: {}
+[4.624126] (-) TimerEvent: {}
+[4.724833] (-) TimerEvent: {}
+[4.825898] (-) TimerEvent: {}
+[4.927758] (-) TimerEvent: {}
+[5.028384] (-) TimerEvent: {}
+[5.129792] (-) TimerEvent: {}
+[5.232563] (-) TimerEvent: {}
+[5.333076] (-) TimerEvent: {}
+[5.435044] (-) TimerEvent: {}
+[5.536656] (-) TimerEvent: {}
+[5.638746] (-) TimerEvent: {}
+[5.740920] (-) TimerEvent: {}
+[5.844616] (-) TimerEvent: {}
+[5.945117] (-) TimerEvent: {}
+[6.045737] (-) TimerEvent: {}
+[6.148691] (-) TimerEvent: {}
+[6.249186] (-) TimerEvent: {}
+[6.350740] (-) TimerEvent: {}
+[6.451887] (-) TimerEvent: {}
+[6.555855] (-) TimerEvent: {}
+[6.659158] (-) TimerEvent: {}
+[6.761756] (-) TimerEvent: {}
+[6.865773] (-) TimerEvent: {}
+[6.966318] (-) TimerEvent: {}
+[7.067411] (-) TimerEvent: {}
+[7.167916] (-) TimerEvent: {}
+[7.269751] (-) TimerEvent: {}
+[7.370301] (-) TimerEvent: {}
+[7.473756] (-) TimerEvent: {}
+[7.574372] (-) TimerEvent: {}
+[7.674931] (-) TimerEvent: {}
+[7.775411] (-) TimerEvent: {}
+[7.877941] (-) TimerEvent: {}
+[7.978516] (-) TimerEvent: {}
+[8.083839] (-) TimerEvent: {}
+[8.184346] (-) TimerEvent: {}
+[8.284932] (-) TimerEvent: {}
+[8.388217] (-) TimerEvent: {}
+[8.488835] (-) TimerEvent: {}
+[8.589463] (-) TimerEvent: {}
+[8.690912] (-) TimerEvent: {}
+[8.793319] (-) TimerEvent: {}
+[8.897752] (-) TimerEvent: {}
+[8.998755] (-) TimerEvent: {}
+[9.100132] (-) TimerEvent: {}
+[9.205447] (-) TimerEvent: {}
+[9.308119] (-) TimerEvent: {}
+[9.409130] (-) TimerEvent: {}
+[9.511755] (-) TimerEvent: {}
+[9.612296] (-) TimerEvent: {}
+[9.715537] (-) TimerEvent: {}
+[9.816033] (-) TimerEvent: {}
+[9.917498] (-) TimerEvent: {}
+[10.018791] (-) TimerEvent: {}
+[10.119301] (-) TimerEvent: {}
+[10.223332] (-) TimerEvent: {}
+[10.323830] (-) TimerEvent: {}
+[10.424347] (-) TimerEvent: {}
+[10.524899] (-) TimerEvent: {}
+[10.630724] (-) TimerEvent: {}
+[10.733866] (-) TimerEvent: {}
+[10.834929] (-) TimerEvent: {}
+[10.937032] (-) TimerEvent: {}
+[11.038125] (-) TimerEvent: {}
+[11.139376] (-) TimerEvent: {}
+[11.239924] (-) TimerEvent: {}
+[11.340542] (-) TimerEvent: {}
+[11.446469] (-) TimerEvent: {}
+[11.547486] (-) TimerEvent: {}
+[11.650780] (-) TimerEvent: {}
+[11.757743] (-) TimerEvent: {}
+[11.858298] (-) TimerEvent: {}
+[11.958876] (-) TimerEvent: {}
+[12.061755] (-) TimerEvent: {}
+[12.162771] (-) TimerEvent: {}
+[12.264797] (-) TimerEvent: {}
+[12.366624] (-) TimerEvent: {}
+[12.468902] (-) TimerEvent: {}
+[12.570316] (-) TimerEvent: {}
+[12.670968] (-) TimerEvent: {}
+[12.774133] (-) TimerEvent: {}
+[12.874666] (-) TimerEvent: {}
+[12.975173] (-) TimerEvent: {}
+[13.078751] (-) TimerEvent: {}
+[13.179223] (-) TimerEvent: {}
+[13.279782] (-) TimerEvent: {}
+[13.380278] (-) TimerEvent: {}
+[13.481331] (-) TimerEvent: {}
+[13.583154] (-) TimerEvent: {}
+[13.686392] (-) TimerEvent: {}
+[13.786929] (-) TimerEvent: {}
+[13.887795] (-) TimerEvent: {}
+[13.990937] (-) TimerEvent: {}
+[14.091502] (-) TimerEvent: {}
+[14.192804] (-) TimerEvent: {}
+[14.295461] (-) TimerEvent: {}
+[14.396922] (-) TimerEvent: {}
+[14.498737] (-) TimerEvent: {}
+[14.600874] (-) TimerEvent: {}
+[14.701373] (-) TimerEvent: {}
+[14.801875] (-) TimerEvent: {}
+[14.902950] (-) TimerEvent: {}
+[15.005101] (-) TimerEvent: {}
+[15.106136] (-) TimerEvent: {}
+[15.208017] (-) TimerEvent: {}
+[15.310067] (-) TimerEvent: {}
+[15.410565] (-) TimerEvent: {}
+[15.516104] (-) TimerEvent: {}
+[15.617317] (-) TimerEvent: {}
+[15.721043] (-) TimerEvent: {}
+[15.821777] (-) TimerEvent: {}
+[15.925726] (-) TimerEvent: {}
+[16.026422] (-) TimerEvent: {}
+[16.130103] (-) TimerEvent: {}
+[16.231829] (-) TimerEvent: {}
+[16.332677] (-) TimerEvent: {}
+[16.433170] (-) TimerEvent: {}
+[16.535294] (-) TimerEvent: {}
+[16.636798] (-) TimerEvent: {}
+[16.737570] (-) TimerEvent: {}
+[16.839608] (-) TimerEvent: {}
+[16.940268] (-) TimerEvent: {}
+[17.042746] (-) TimerEvent: {}
+[17.143344] (-) TimerEvent: {}
+[17.245746] (-) TimerEvent: {}
+[17.346750] (-) TimerEvent: {}
+[17.448738] (-) TimerEvent: {}
+[17.552744] (-) TimerEvent: {}
+[17.653199] (-) TimerEvent: {}
+[17.753739] (-) TimerEvent: {}
+[17.854509] (-) TimerEvent: {}
+[17.957827] (-) TimerEvent: {}
+[18.058327] (-) TimerEvent: {}
+[18.159588] (-) TimerEvent: {}
+[18.260298] (-) TimerEvent: {}
+[18.364076] (-) TimerEvent: {}
+[18.464950] (-) TimerEvent: {}
+[18.566734] (-) TimerEvent: {}
+[18.667357] (-) TimerEvent: {}
+[18.770755] (-) TimerEvent: {}
+[18.871354] (-) TimerEvent: {}
+[18.973171] (-) TimerEvent: {}
+[19.077046] (-) TimerEvent: {}
+[19.178747] (-) TimerEvent: {}
+[19.280389] (-) TimerEvent: {}
+[19.382103] (-) TimerEvent: {}
+[19.485246] (-) TimerEvent: {}
+[19.587876] (-) TimerEvent: {}
+[19.694751] (-) TimerEvent: {}
+[19.795697] (-) TimerEvent: {}
+[19.896384] (-) TimerEvent: {}
+[20.009753] (-) TimerEvent: {}
+[20.110259] (-) TimerEvent: {}
+[20.214866] (-) TimerEvent: {}
+[20.315471] (-) TimerEvent: {}
+[20.415891] (-) TimerEvent: {}
+[20.516730] (-) TimerEvent: {}
+[20.618083] (-) TimerEvent: {}
+[20.720333] (-) TimerEvent: {}
+[20.823752] (-) TimerEvent: {}
+[20.924241] (-) TimerEvent: {}
+[21.024843] (-) TimerEvent: {}
+[21.125595] (-) TimerEvent: {}
+[21.227487] (-) TimerEvent: {}
+[21.328610] (-) TimerEvent: {}
+[21.429206] (-) TimerEvent: {}
+[21.530448] (-) TimerEvent: {}
+[21.632194] (-) TimerEvent: {}
+[21.734910] (-) TimerEvent: {}
+[21.835447] (-) TimerEvent: {}
+[21.935947] (-) TimerEvent: {}
+[22.037015] (-) TimerEvent: {}
+[22.146913] (-) TimerEvent: {}
+[22.247460] (-) TimerEvent: {}
+[22.348078] (-) TimerEvent: {}
+[22.537770] (-) TimerEvent: {}
+[22.640515] (-) TimerEvent: {}
+[22.741997] (-) TimerEvent: {}
+[22.846550] (-) TimerEvent: {}
+[22.947439] (-) TimerEvent: {}
+[23.049170] (-) TimerEvent: {}
+[23.149678] (-) TimerEvent: {}
+[23.252445] (-) TimerEvent: {}
+[23.354956] (-) TimerEvent: {}
+[23.455691] (-) TimerEvent: {}
+[23.556187] (-) TimerEvent: {}
+[23.656856] (-) TimerEvent: {}
+[23.757453] (-) TimerEvent: {}
+[23.858563] (-) TimerEvent: {}
+[23.959681] (-) TimerEvent: {}
+[24.063813] (-) TimerEvent: {}
+[24.165965] (-) TimerEvent: {}
+[24.266579] (-) TimerEvent: {}
+[24.367182] (-) TimerEvent: {}
+[24.467680] (-) TimerEvent: {}
+[24.570158] (-) TimerEvent: {}
+[24.670665] (-) TimerEvent: {}
+[24.771245] (-) TimerEvent: {}
+[24.874619] (-) TimerEvent: {}
+[24.976583] (-) TimerEvent: {}
+[25.077218] (-) TimerEvent: {}
+[25.179557] (-) TimerEvent: {}
+[25.280947] (-) TimerEvent: {}
+[25.382224] (-) TimerEvent: {}
+[25.484435] (-) TimerEvent: {}
+[25.585861] (-) TimerEvent: {}
+[25.694749] (-) TimerEvent: {}
+[25.802762] (-) TimerEvent: {}
+[25.903241] (-) TimerEvent: {}
+[26.003750] (-) TimerEvent: {}
+[26.104273] (-) TimerEvent: {}
+[26.204814] (-) TimerEvent: {}
+[26.305580] (-) TimerEvent: {}
+[26.406345] (-) TimerEvent: {}
+[26.507171] (-) TimerEvent: {}
+[26.607973] (-) TimerEvent: {}
+[26.709616] (-) TimerEvent: {}
+[26.815732] (-) TimerEvent: {}
+[26.916221] (-) TimerEvent: {}
+[27.016786] (-) TimerEvent: {}
+[27.117474] (-) TimerEvent: {}
+[27.218819] (-) TimerEvent: {}
+[27.319358] (-) TimerEvent: {}
+[27.420079] (-) TimerEvent: {}
+[27.526835] (-) TimerEvent: {}
+[27.627390] (-) TimerEvent: {}
+[27.728062] (-) TimerEvent: {}
+[27.829206] (-) TimerEvent: {}
+[27.934749] (-) TimerEvent: {}
+[28.035398] (-) TimerEvent: {}
+[28.135891] (-) TimerEvent: {}
+[28.237269] (-) TimerEvent: {}
+[28.338462] (-) TimerEvent: {}
+[28.438960] (-) TimerEvent: {}
+[28.539905] (-) TimerEvent: {}
+[28.641141] (-) TimerEvent: {}
+[28.742021] (-) TimerEvent: {}
+[28.843754] (-) TimerEvent: {}
+[28.944229] (-) TimerEvent: {}
+[29.050800] (-) TimerEvent: {}
+[29.151334] (-) TimerEvent: {}
+[29.251901] (-) TimerEvent: {}
+[29.353969] (-) TimerEvent: {}
+[29.454726] (-) TimerEvent: {}
+[29.555590] (-) TimerEvent: {}
+[29.656165] (-) TimerEvent: {}
+[29.757236] (-) TimerEvent: {}
+[29.857744] (-) TimerEvent: {}
+[29.958244] (-) TimerEvent: {}
+[30.059022] (-) TimerEvent: {}
+[30.160996] (-) TimerEvent: {}
+[30.262076] (-) TimerEvent: {}
+[30.365310] (-) TimerEvent: {}
+[30.466505] (-) TimerEvent: {}
+[30.571979] (-) TimerEvent: {}
+[30.673408] (-) TimerEvent: {}
+[30.776963] (-) TimerEvent: {}
+[30.877614] (-) TimerEvent: {}
+[30.979314] (-) TimerEvent: {}
+[31.081127] (-) TimerEvent: {}
+[31.181910] (-) TimerEvent: {}
+[31.287633] (-) TimerEvent: {}
+[31.388258] (-) TimerEvent: {}
+[31.488821] (-) TimerEvent: {}
+[31.590821] (-) TimerEvent: {}
+[31.691303] (-) TimerEvent: {}
+[31.792917] (-) TimerEvent: {}
+[31.893368] (-) TimerEvent: {}
+[31.997779] (-) TimerEvent: {}
+[32.098243] (-) TimerEvent: {}
+[32.199752] (-) TimerEvent: {}
+[32.300213] (-) TimerEvent: {}
+[32.403833] (-) TimerEvent: {}
+[32.504370] (-) TimerEvent: {}
+[32.604850] (-) TimerEvent: {}
+[32.637525] (a3_racing) StdoutLine: {'line': b'[ 54%] \x1b[32m\x1b[1mLinking CXX executable racing_node\x1b[0m\n'}
+[32.705040] (-) TimerEvent: {}
+[32.807105] (-) TimerEvent: {}
+[32.912596] (-) TimerEvent: {}
+[33.014150] (-) TimerEvent: {}
+[33.117705] (-) TimerEvent: {}
+[33.218281] (-) TimerEvent: {}
+[33.320454] (-) TimerEvent: {}
+[33.421436] (-) TimerEvent: {}
+[33.525397] (-) TimerEvent: {}
+[33.626756] (-) TimerEvent: {}
+[33.738670] (-) TimerEvent: {}
+[33.839248] (-) TimerEvent: {}
+[33.939861] (-) TimerEvent: {}
+[34.042751] (-) TimerEvent: {}
+[34.143348] (-) TimerEvent: {}
+[34.244753] (-) TimerEvent: {}
+[34.347179] (-) TimerEvent: {}
+[34.451751] (-) TimerEvent: {}
+[34.552236] (-) TimerEvent: {}
+[34.626746] (a3_racing) StdoutLine: {'line': b'[ 63%] Built target racing_node\n'}
+[34.649287] (a3_racing) StdoutLine: {'line': b'\x1b[35m\x1b[1mConsolidate compiler generated dependencies of target gtest_main\x1b[0m\n'}
+[34.652335] (-) TimerEvent: {}
+[34.683709] (a3_racing) StdoutLine: {'line': b'[ 81%] Built target gtest_main\n'}
+[34.722811] (a3_racing) StdoutLine: {'line': b'\x1b[35m\x1b[1mConsolidate compiler generated dependencies of target test_racing\x1b[0m\n'}
+[34.752529] (-) TimerEvent: {}
+[34.774915] (a3_racing) StdoutLine: {'line': b'[100%] Built target test_racing\n'}
+[34.820478] (a3_racing) CommandEnded: {'returncode': 0}
+[34.828019] (a3_racing) JobProgress: {'identifier': 'a3_racing', 'progress': 'install'}
+[34.838766] (a3_racing) Command: {'cmd': ['/usr/bin/cmake', '--install', '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/build/a3_racing'], 'cwd': '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/build/a3_racing', 'env': OrderedDict([('GJS_DEBUG_TOPICS', 'JS ERROR;JS LOG'), ('PYTHON_BASIC_REPL', '1'), ('LESSOPEN', '| /usr/bin/lesspipe %s'), ('GZ_SIM_RESOURCE_PATH', '/opt/ros/humble/share'), ('USER', 'student'), ('SSH_AGENT_PID', '1998'), ('XDG_SESSION_TYPE', 'x11'), ('GIT_ASKPASS', '/usr/share/code/resources/app/extensions/git/dist/askpass.sh'), ('SHLVL', '1'), ('LD_LIBRARY_PATH', '/opt/ros/humble/opt/rviz_ogre_vendor/lib:/opt/ros/humble/lib/x86_64-linux-gnu:/opt/ros/humble/lib'), ('HOME', '/home/student'), ('CHROME_DESKTOP', 'code.desktop'), ('TERM_PROGRAM_VERSION', '1.109.0'), ('GIO_LAUNCHED_DESKTOP_FILE', '/usr/share/applications/code.desktop'), ('ROS_PYTHON_VERSION', '3'), ('GNOME_SHELL_SESSION_MODE', 'ubuntu'), ('GTK_MODULES', 'gail:atk-bridge'), ('VSCODE_GIT_ASKPASS_MAIN', '/usr/share/code/resources/app/extensions/git/dist/askpass-main.js'), ('VSCODE_GIT_ASKPASS_NODE', '/usr/share/code/code'), ('MANAGERPID', '1886'), ('PYDEVD_DISABLE_FILE_VALIDATION', '1'), ('SYSTEMD_EXEC_PID', '2110'), ('BUNDLED_DEBUGPY_PATH', '/home/student/.vscode/extensions/ms-python.debugpy-2026.6.0-linux-x64/bundled/libs/debugpy'), ('XRDP_PULSE_SOURCE_SOCKET', 'xrdp_chansrv_audio_in_socket_10'), ('VSCODE_PYTHON_AUTOACTIVATE_GUARD', '1'), ('XRDP_PULSE_SINK_SOCKET', 'xrdp_chansrv_audio_out_socket_10'), ('DBUS_SESSION_BUS_ADDRESS', 'unix:path=/run/user/1002/bus'), ('COLORTERM', 'truecolor'), ('GIO_LAUNCHED_DESKTOP_FILE_PID', '2601'), ('PULSE_SCRIPT', '/etc/xrdp/pulse/default.pa'), ('IM_CONFIG_PHASE', '1'), ('COLCON_PREFIX_PATH', '/home/student/ros2_ws/install'), ('ROS_DISTRO', 'humble'), ('GTK_IM_MODULE', 'ibus'), ('LOGNAME', 'student'), ('JOURNAL_STREAM', '8:20350'), ('_', '/usr/bin/colcon'), ('ROS_VERSION', '2'), ('XDG_SESSION_CLASS', 'user'), ('TERM', 'xterm-256color'), ('GNOME_DESKTOP_SESSION_ID', 'this-is-deprecated'), ('FC_FONTATIONS', '1'), ('ROS_LOCALHOST_ONLY', '0'), ('PATH', '/opt/ros/humble/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/home/student/.vscode/extensions/ms-python.debugpy-2026.6.0-linux-x64/bundled/scripts/noConfigScripts'), ('SESSION_MANAGER', 'local/labNVXMF8:@/tmp/.ICE-unix/2087,unix/labNVXMF8:/tmp/.ICE-unix/2087'), ('INVOCATION_ID', '2d5173207c3940b3976a846632225047'), ('XDG_MENU_PREFIX', 'gnome-'), ('XRDP_SOCKET_PATH', '/run/xrdp/sockdir'), ('XDG_RUNTIME_DIR', '/run/user/1002'), ('GDK_BACKEND', 'x11'), ('DISPLAY', ':10.0'), ('VSCODE_DEBUGPY_ADAPTER_ENDPOINTS', '/home/student/.vscode/extensions/ms-python.debugpy-2026.6.0-linux-x64/.noConfigDebugAdapterEndpoints/endpoint-42827fad0e9cc8ef.txt'), ('LANG', 'C.UTF-8'), ('XDG_CURRENT_DESKTOP', 'ubuntu:GNOME'), ('PYTHONSTARTUP', '/home/student/.config/Code/User/workspaceStorage/6fcafe2dd31d46d032427cdc7c97a12c/ms-python.python/pythonrc.py'), ('XMODIFIERS', '@im=ibus'), ('LS_COLORS', 'rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=00:su=37;41:sg=30;43:ca=30;41:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arc=01;31:*.arj=01;31:*.taz=01;31:*.lha=01;31:*.lz4=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.tzo=01;31:*.t7z=01;31:*.zip=01;31:*.z=01;31:*.dz=01;31:*.gz=01;31:*.lrz=01;31:*.lz=01;31:*.lzo=01;31:*.xz=01;31:*.zst=01;31:*.tzst=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.alz=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.cab=01;31:*.wim=01;31:*.swm=01;31:*.dwm=01;31:*.esd=01;31:*.jpg=01;35:*.jpeg=01;35:*.mjpg=01;35:*.mjpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.webp=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.m4a=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.oga=00;36:*.opus=00;36:*.spx=00;36:*.xspf=00;36:'), ('VSCODE_GIT_IPC_HANDLE', '/run/user/1002/vscode-git-b0f58d027f.sock'), ('TERM_PROGRAM', 'vscode'), ('SSH_AUTH_SOCK', '/run/user/1002/keyring/ssh'), ('AMENT_PREFIX_PATH', '/home/student/ros2_ws/install/quiz5:/home/student/ros2_ws/install/a3_support:/home/student/ros2_ws/install/a3_racing:/opt/ros/humble'), ('UID', '1002'), ('SHELL', '/bin/bash'), ('QT_ACCESSIBILITY', '1'), ('LESSCLOSE', '/usr/bin/lesspipe %s %s'), ('XRDP_SESSION', '1'), ('GPG_AGENT_INFO', '/run/user/1002/gnupg/S.gpg-agent:0:1'), ('GAZEBO_RESOURCE_PATH', '/usr/share/gazebo-11/'), ('GJS_DEBUG_OUTPUT', 'stderr'), ('VSCODE_GIT_ASKPASS_EXTRA_ARGS', ''), ('QT_IM_MODULE', 'ibus'), ('PWD', '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/build/a3_racing'), ('XDG_DATA_DIRS', '/usr/share/gnome:/usr/share/ubuntu:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop'), ('PYTHONPATH', '/opt/ros/humble/lib/python3.10/site-packages:/opt/ros/humble/local/lib/python3.10/dist-packages'), ('SGX_AESM_ADDR', '1'), ('COLCON', '1'), ('CMAKE_PREFIX_PATH', '/home/student/ros2_ws/install/quiz5:/home/student/ros2_ws/install/a3_support:/home/student/ros2_ws/install/a3_racing:/opt/ros/humble')]), 'shell': False}
+[34.852997] (a3_racing) StdoutLine: {'line': b'-- Install configuration: ""\n'}
+[34.853318] (-) TimerEvent: {}
+[34.853512] (a3_racing) StdoutLine: {'line': b'-- Installing: /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/lib/a3_racing/racing_node\n'}
+[34.883328] (a3_racing) StdoutLine: {'line': b'-- Set runtime path of "/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/lib/a3_racing/racing_node" to ""\n'}
+[34.883821] (a3_racing) StdoutLine: {'line': b'-- Up-to-date: /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/a3_racing/data\n'}
+[34.884000] (a3_racing) StdoutLine: {'line': b'-- Up-to-date: /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/a3_racing/data/sample\n'}
+[34.884189] (a3_racing) StdoutLine: {'line': b'-- Up-to-date: /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/ament_index/resource_index/package_run_dependencies/a3_racing\n'}
+[34.884460] (a3_racing) StdoutLine: {'line': b'-- Up-to-date: /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/ament_index/resource_index/parent_prefix_path/a3_racing\n'}
+[34.884610] (a3_racing) StdoutLine: {'line': b'-- Up-to-date: /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/a3_racing/environment/ament_prefix_path.sh\n'}
+[34.884764] (a3_racing) StdoutLine: {'line': b'-- Up-to-date: /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/a3_racing/environment/ament_prefix_path.dsv\n'}
+[34.884890] (a3_racing) StdoutLine: {'line': b'-- Up-to-date: /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/a3_racing/environment/path.sh\n'}
+[34.885019] (a3_racing) StdoutLine: {'line': b'-- Up-to-date: /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/a3_racing/environment/path.dsv\n'}
+[34.885235] (a3_racing) StdoutLine: {'line': b'-- Up-to-date: /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/a3_racing/local_setup.bash\n'}
+[34.885379] (a3_racing) StdoutLine: {'line': b'-- Up-to-date: /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/a3_racing/local_setup.sh\n'}
+[34.885515] (a3_racing) StdoutLine: {'line': b'-- Up-to-date: /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/a3_racing/local_setup.zsh\n'}
+[34.885837] (a3_racing) StdoutLine: {'line': b'-- Up-to-date: /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/a3_racing/local_setup.dsv\n'}
+[34.886129] (a3_racing) StdoutLine: {'line': b'-- Installing: /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/a3_racing/package.dsv\n'}
+[34.886420] (a3_racing) StdoutLine: {'line': b'-- Up-to-date: /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/ament_index/resource_index/packages/a3_racing\n'}
+[34.886534] (a3_racing) StdoutLine: {'line': b'-- Up-to-date: /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/a3_racing/cmake/a3_racingConfig.cmake\n'}
+[34.886669] (a3_racing) StdoutLine: {'line': b'-- Up-to-date: /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/a3_racing/cmake/a3_racingConfig-version.cmake\n'}
+[34.886788] (a3_racing) StdoutLine: {'line': b'-- Up-to-date: /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/a3_racing/package.xml\n'}
+[34.889939] (a3_racing) CommandEnded: {'returncode': 0}
+[34.930422] (a3_racing) JobEnded: {'identifier': 'a3_racing', 'rc': 0}
+[34.931300] (-) EventReactorShutdown: {}

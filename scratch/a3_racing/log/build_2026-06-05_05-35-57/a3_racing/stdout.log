@@ -1,0 +1,13 @@
+[35m[1mConsolidate compiler generated dependencies of target laserprocessing[0m
+[ 18%] Built target gtest_main
+[ 36%] Built target gtest
+[ 45%] [32mBuilding CXX object CMakeFiles/laserprocessing.dir/src/laserprocessing.cpp.o[0m
+[ 54%] [32m[1mLinking CXX static library liblaserprocessing.a[0m
+[ 54%] Built target laserprocessing
+[35m[1mConsolidate compiler generated dependencies of target test_racing[0m
+[35m[1mConsolidate compiler generated dependencies of target racing_node[0m
+[ 63%] [32mBuilding CXX object CMakeFiles/test_racing.dir/test/utest.cpp.o[0m
+[ 72%] [32mBuilding CXX object CMakeFiles/racing_node.dir/src/main_racing.cpp.o[0m
+[ 81%] [32mBuilding CXX object CMakeFiles/racing_node.dir/src/racingnode.cpp.o[0m
+[ 90%] [32m[1mLinking CXX executable test_racing[0m
+[ 90%] Built target test_racing

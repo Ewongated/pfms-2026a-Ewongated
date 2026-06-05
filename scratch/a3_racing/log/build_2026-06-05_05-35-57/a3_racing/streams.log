@@ -1,0 +1,57 @@
+[0.034s] Invoking command in '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/build/a3_racing': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/humble /usr/bin/cmake --build /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/build/a3_racing -- -j8 -l8
+[0.320s] [35m[1mConsolidate compiler generated dependencies of target laserprocessing[0m
+[0.333s] [ 18%] Built target gtest_main
+[0.337s] [ 36%] Built target gtest
+[0.341s] [ 45%] [32mBuilding CXX object CMakeFiles/laserprocessing.dir/src/laserprocessing.cpp.o[0m
+[2.198s] [ 54%] [32m[1mLinking CXX static library liblaserprocessing.a[0m
+[2.267s] [ 54%] Built target laserprocessing
+[2.300s] [35m[1mConsolidate compiler generated dependencies of target test_racing[0m
+[2.308s] [35m[1mConsolidate compiler generated dependencies of target racing_node[0m
+[2.326s] [ 63%] [32mBuilding CXX object CMakeFiles/test_racing.dir/test/utest.cpp.o[0m
+[2.342s] [ 72%] [32mBuilding CXX object CMakeFiles/racing_node.dir/src/main_racing.cpp.o[0m
+[2.342s] [ 81%] [32mBuilding CXX object CMakeFiles/racing_node.dir/src/racingnode.cpp.o[0m
+[2.746s] [01m[K/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/src/racingnode.cpp:530:2:[m[K [01;35m[Kwarning: [m[Knull character(s) ignored
+[2.746s]   530 | }[01;35m[K [m[K
+[2.747s]       |  [01;35m[K^[m[K
+[5.900s] In file included from [01m[K/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/src/racingnode.cpp:1[m[K:
+[5.900s] [01m[K/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/src/racingnode.h:[m[K In constructor ‘[01m[KRacingNode::RacingNode()[m[K’:
+[5.900s] [01m[K/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/src/racingnode.h:259:30:[m[K [01;35m[Kwarning: [m[K‘[01m[KRacingNode::goalStuckCount_[m[K’ will be initialized after [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wreorder-Wreorder]8;;[m[K]
+[5.900s]   259 |     std::atomic<std::size_t> [01;35m[KgoalStuckCount_[m[K;  ///< Ticks spent on current goal without progress
+[5.900s]       |                              [01;35m[K^~~~~~~~~~~~~~~[m[K
+[5.901s] [01m[K/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/src/racingnode.h:248:45:[m[K [01;35m[Kwarning: [m[K  ‘[01m[KMissionState RacingNode::state_[m[K’ [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wreorder-Wreorder]8;;[m[K]
+[5.901s]   248 |     MissionState                            [01;35m[Kstate_[m[K;        ///< Current state machine state
+[5.901s]       |                                             [01;35m[K^~~~~~[m[K
+[5.904s] [01m[K/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/src/racingnode.cpp:12:1:[m[K [01;35m[Kwarning: [m[K  when initialized here [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wreorder-Wreorder]8;;[m[K]
+[5.905s]    12 | [01;35m[KRacingNode[m[K::RacingNode()
+[5.905s]       | [01;35m[K^~~~~~~~~~[m[K
+[5.961s] In file included from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/logging.hpp:24[m[K,
+[5.961s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/client.hpp:40[m[K,
+[5.961s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/callback_group.hpp:24[m[K,
+[5.962s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/any_executable.hpp:20[m[K,
+[5.962s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/memory_strategy.hpp:25[m[K,
+[5.962s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/memory_strategies.hpp:18[m[K,
+[5.962s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/executor_options.hpp:20[m[K,
+[5.962s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/executor.hpp:37[m[K,
+[5.962s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/executors/multi_threaded_executor.hpp:25[m[K,
+[5.962s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/executors.hpp:21[m[K,
+[5.962s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/rclcpp.hpp:155[m[K,
+[5.963s]                  from [01m[K/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/src/racingnode.h:4[m[K,
+[5.963s]                  from [01m[K/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/src/racingnode.cpp:1[m[K:
+[5.963s] [01m[K/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/src/racingnode.cpp:[m[K In member function ‘[01m[Kvoid RacingNode::controlLoop()[m[K’:
+[5.963s] [01m[K/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/src/racingnode.cpp:294:21:[m[K [01;31m[Kerror: [m[Kuse of deleted function ‘[01m[Kstd::atomic<long unsigned int>::atomic(const std::atomic<long unsigned int>&)[m[K’
+[5.963s]   294 |                     [01;31m[KRCLCPP_WARN[m[K(this->get_logger(),
+[5.963s]       |                     [01;31m[K^~~~~~~~~~~[m[K
+[5.963s] In file included from [01m[K/usr/include/c++/11/future:41[m[K,
+[5.963s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/executors.hpp:18[m[K,
+[5.964s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/rclcpp.hpp:155[m[K,
+[5.966s]                  from [01m[K/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/src/racingnode.h:4[m[K,
+[5.966s]                  from [01m[K/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/src/racingnode.cpp:1[m[K:
+[5.967s] [01m[K/usr/include/c++/11/atomic:898:7:[m[K [01;36m[Knote: [m[Kdeclared here
+[5.967s]   898 |       [01;36m[Katomic[m[K(const atomic&) = delete;
+[5.967s]       |       [01;36m[K^~~~~~[m[K
+[7.850s] [ 90%] [32m[1mLinking CXX executable test_racing[0m
+[9.139s] [ 90%] Built target test_racing
+[12.373s] gmake[2]: *** [CMakeFiles/racing_node.dir/build.make:90: CMakeFiles/racing_node.dir/src/racingnode.cpp.o] Error 1
+[12.374s] gmake[1]: *** [CMakeFiles/Makefile2:185: CMakeFiles/racing_node.dir/all] Error 2
+[12.374s] gmake: *** [Makefile:146: all] Error 2
+[12.377s] Invoked command in '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/build/a3_racing' returned '2': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/humble /usr/bin/cmake --build /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/build/a3_racing -- -j8 -l8

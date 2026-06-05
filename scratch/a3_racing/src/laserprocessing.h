@@ -10,7 +10,7 @@
 #include <optional>
 
 /**
- * @brief Processes 180° laser scans for the Ackerman (Audi R8) racing platform.
+ * @brief Processes 180 deg laser scans for the Ackerman (Audi R8) racing platform.
  *
  * The laser is mounted 3.725 m ahead of the reported odometry origin.
  * All output points are expressed in the **world frame** when an odometry
@@ -45,13 +45,13 @@ public:
     /**
      * @brief Detects whether a non-wall obstacle blocks the forward arc.
      *
-     * Examines rays within a forward cone (±OBSTACLE_HALF_ANGLE_DEG of the
+     * Examines rays within a forward cone (?OBSTACLE_HALF_ANGLE_DEG of the
      * scan centre). A reading is flagged as an obstacle when its range is
      * shorter than WALL_MIN_RANGE_M, indicating an object closer than the
      * typical wall distance.
      *
      * Both positive (obstacle present) and negative (clear) results are
-     * meaningful — unit tests must cover both cases.
+     * meaningful -- unit tests must cover both cases.
      *
      * @return true if a non-wall obstacle is detected in the forward corridor.
      */
@@ -109,7 +109,7 @@ private:
     /**
      * @brief Returns the yaw extracted from an odometry quaternion [rad].
      * @param odom Odometry message.
-     * @return Yaw angle in [-π, π].
+     * @return Yaw angle in [-pi, pi].
      */
     static double yawFromOdom(const nav_msgs::msg::Odometry& odom);
 
@@ -119,12 +119,14 @@ private:
     bool                        hasOdom_;   //!< True once at least one odom message received
     mutable std::mutex          mtx_;       //!< Protects laserScan_ and odom_
 
-    // ── Tuning constants ─────────────────────────────────────────────────────
+    // ?? Tuning constants ?????????????????????????????????????????????????????
     static constexpr double LASER_OFFSET_M           = 3.725; //!< Laser forward offset from odom origin [m]
     static constexpr double OBSTACLE_HALF_ANGLE_DEG  = 15.0;  //!< Half-width of forward obstacle-check cone [deg]
-    static constexpr double WALL_MIN_RANGE_M         = 1.5;   //!< Minimum range that still counts as a wall reading [m]
+    static constexpr double OBSTACLE_WALL_FRACTION   = 0.55;  //!< Obstacle threshold as fraction of estimated wall range
+    static constexpr double OBSTACLE_MIN_RANGE_M      = 1.0;   //!< Absolute minimum obstacle detection range [m]
     static constexpr double CORRIDOR_TOLERANCE_M     = 0.2;   //!< Allowed lateral deviation from corridor centre [m]
-    static constexpr unsigned int MIN_WALL_READINGS_PER_SIDE = 3; //!< Minimum valid rays needed per wall side
+    static constexpr unsigned int MIN_WALL_READINGS_PER_SIDE = 3;  //!< Minimum valid rays needed per wall side
+    static constexpr unsigned int MIN_OBSTACLE_RAYS          = 3;  //!< Min consecutive close rays to confirm obstacle
 };
 
 #endif // LASERPROCESSING_H
