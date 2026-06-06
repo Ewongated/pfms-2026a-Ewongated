@@ -90,26 +90,41 @@ private:
 
     // Constants -- shared
     static constexpr double      CONTROL_HZ            = 20.0;
-    static constexpr double      MAX_BRAKE              = 8000.0;
-    static constexpr double      MAX_STEER              = 5.0;
-    static constexpr double      WHEELBASE_M            = 2.65;
-    static constexpr double      V_MAX                  = 15.0;
-    static constexpr double      CORNER_ALPHA_RAD       = 0.4;  //!< Threshold to enter TURNING [rad] (~23 deg)
-    static constexpr double      MIN_SPEED_FACTOR       = 0.3;
+    static constexpr double      MAX_BRAKE             = 8000.0;
+    static constexpr double      MAX_STEER             = 10.0;
+    static constexpr double      WHEELBASE_M           = 2.65;
+    static constexpr double      V_MAX                 = 12.0;
+    static constexpr double      CORNER_ALPHA_RAD      = 0.4;  //!< Threshold to enter TURNING [rad] (~23 deg)
+    static constexpr double      MIN_SPEED_FACTOR      = 0.3;  //!< Throttle floor in CRUISING
+    static constexpr double      MIN_SPEED_FACTOR_TURN = 0.5;  //!< Throttle floor in TURNING -- higher so
+                                                                //!< the car retains momentum to drive back
+                                                                //!< out to the arc when it has cut inside
 
     // Constants -- CRUISING state
-    static constexpr double      CRUISE_THROTTLE        = 0.5;
-    static constexpr double      STEER_K                = 1.2;  //!< Nonlinear steering gain
-    static constexpr double      STEER_KD               = 0.5;  //!< Derivative damping gain
-    static constexpr std::size_t GOAL_LOOKAHEAD         = 15;    //!< Goals ahead to steer toward
+    static constexpr double      CRUISE_THROTTLE         = 0.5;
+    static constexpr double      STEER_K                 = 1.2;  //!< Nonlinear steering gain
+    static constexpr double      STEER_KD                = 0.5;  //!< Derivative damping gain
+    static constexpr double      CRUISE_LOOKAHEAD_DIST_M = 15.0; //!< Steer-target distance on straights [m]
 
     // Constants -- TURNING state
     static constexpr double      CORNER_BRAKE           = 8000.0;
-    static constexpr double      TURN_THROTTLE          = 0.3;       //!< Feathered throttle mid-corner
-    static constexpr double      TURN_V_MAX             = 7.0;       //!< Hard speed cap in TURNING [m/s]
-    static constexpr double      TURN_STEER_K           = 10.0;       //!< Tighter steering gain when corner imminent
-    static constexpr double      TURN_STEER_KD          = 0.1;       //!< Derivative damping when corner imminent
-    static constexpr std::size_t TURN_GOAL_LOOKAHEAD    = 3;         //!< Closer steer target when corner imminent
-    static constexpr double      BRAKE_PREVIEW_DIST_M   = 6.0;       //!< Pre-corner braking distance [m]
+    static constexpr double      TURN_THROTTLE          = 0.3;   //!< Feathered throttle mid-corner
+    static constexpr double      TURN_V_MAX             = 7.0;   //!< Hard speed cap in TURNING [m/s]
+    static constexpr double      TURN_STEER_K           = 10.0;  //!< Tighter steering gain when corner imminent
+    static constexpr double      TURN_STEER_KD          = 0.1;   //!< Derivative damping when corner imminent
+    static constexpr double      BRAKE_PREVIEW_DIST_M   = 6.0;   //!< Pre-corner braking distance [m]
+
+    // Lookahead -- corner preview (fixed small index, used only for
+    // state-transition detection, not for the steer target itself)
+    static constexpr std::size_t PREVIEW_GOAL_LOOKAHEAD = 3;     //!< Goals ahead for corner-detection peek
+
+    // Lookahead -- steer target (distance-based, scales with turn severity)
+    static constexpr double      TURN_LD_MAX            = 8.0;  //!< Steer-target dist at corner entry [m]
+    static constexpr double      TURN_LD_MIN            = 1.0;  //!< Steer-target dist at full U-turn [m]
+    //!< Between these limits the lookahead distance is interpolated linearly
+    //!< with |alphaPreview| / pi, so a 180-deg U-turn gets TURN_LD_MIN and a
+    //!< 23-deg entry bend gets TURN_LD_MAX.  This keeps the steer target
+    //!< pointing outward (back toward the arc) when the car has cut inside,
+    //!< rather than tangentially along the inside of the curve.
 };
 #endif // RACINGNODE_H

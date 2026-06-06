@@ -259,9 +259,12 @@ void RacingNode::controlLoop()
                 odom.twist.twist.linear.x, odom.twist.twist.linear.y);
 
             // -- Pre-corner lookahead alpha (used for transition only) ---------
-            // Peek at a close steer target to detect an upcoming corner early.
+            // Peek at a close fixed-index target to detect an upcoming corner
+            // early.  PREVIEW_GOAL_LOOKAHEAD is intentionally small and separate
+            // from the steer-target lookahead so corner detection is responsive
+            // even when the steer target is far ahead on a straight.
             const std::size_t previewIdx =
-                std::min(currentGoal + TURN_GOAL_LOOKAHEAD, goals.size() - 1);
+                std::min(currentGoal + PREVIEW_GOAL_LOOKAHEAD, goals.size() - 1);
             const double alphaPreview = computeAlpha(odom, goals[previewIdx]);
 
             // -- State transition: CRUISING <-> TURNING -----------------------
@@ -278,7 +281,7 @@ void RacingNode::controlLoop()
             // clamped to the last goal -- alphaPreview would point nearly
             // straight ahead even mid-corner, causing a spurious transition.
             const bool previewClamped =
-                (currentGoal + TURN_GOAL_LOOKAHEAD) >= goals.size();
+                (currentGoal + PREVIEW_GOAL_LOOKAHEAD) >= goals.size();
 
             // 20% hysteresis band on exit; blocked when preview is clamped.
             const bool exitCorner =
@@ -300,15 +303,32 @@ void RacingNode::controlLoop()
                 pendingState = nextState;
             }
 
-            // -- [1] Lookahead: tighten as soon as corner is imminent ---------
-            // When a corner is detected ahead (cornerImminent), switch to the
-            // closer lookahead immediately -- even before the state transitions
-            // to TURNING -- so the car begins tracking the apex early.
-            const std::size_t lookahead = cornerImminent
-                ? TURN_GOAL_LOOKAHEAD
-                : GOAL_LOOKAHEAD;
-            const std::size_t steerGoalIdx =
-                std::min(currentGoal + lookahead, goals.size() - 1);
+            // -- [1] Lookahead: angle-scaled distance when turning -------------
+            // In CRUISING a fixed long distance gives smooth straight-line
+            // tracking.  In TURNING the lookahead distance shrinks continuously
+            // with |alphaPreview| so the steer target tightens as the bend
+            // sharpens.  At a full U-turn (pi rad) it reaches TURN_LD_MIN,
+            // which pulls the car back out toward the arc when it has cut
+            // inside rather than pointing tangentially along the inside wall.
+            double lookaheadDist;
+            if (cornerImminent) {
+                const double alphaClamped = std::clamp(
+                    std::abs(alphaPreview), 0.0, M_PI);
+                const double turnFraction = alphaClamped / M_PI;
+                lookaheadDist = TURN_LD_MAX
+                    - (TURN_LD_MAX - TURN_LD_MIN) * turnFraction;
+            } else {
+                lookaheadDist = CRUISE_LOOKAHEAD_DIST_M;
+            }
+
+            // Walk forward through goals to find the first one at or beyond
+            // lookaheadDist.  When the car is inside the arc, chord distances
+            // are shorter so this automatically reaches further around the curve.
+            std::size_t steerGoalIdx = goals.size() - 1;
+            for (std::size_t k = currentGoal; k < goals.size(); ++k) {
+                steerGoalIdx = k;
+                if (euclidean(odom, goals[k]) >= lookaheadDist) break;
+            }
             const geometry_msgs::msg::Point& steerGoal = goals[steerGoalIdx];
 
             // -- Alpha against chosen steer target ----------------------------
@@ -329,7 +349,14 @@ void RacingNode::controlLoop()
                 steerRaw * gain + steerKd * dAlpha, -MAX_STEER, MAX_STEER);
 
             // -- Speed planning -----------------------------------------------
-            const double speedFactor = std::max(std::cos(alpha), MIN_SPEED_FACTOR);
+            // In TURNING, raise the speedFactor floor so the car retains enough
+            // momentum to drive back out to the arc when it has cut inside.
+            // The default MIN_SPEED_FACTOR (0.3) gives only ~9% throttle at
+            // large alpha, which stalls the car mid-corner.
+            const double minFactor   = (nextState == MissionState::TURNING)
+                ? MIN_SPEED_FACTOR_TURN
+                : MIN_SPEED_FACTOR;
+            const double speedFactor = std::max(std::cos(alpha), minFactor);
 
             // -- [3] Hard speed cap: lower ceiling in TURNING -----------------
             const double vMax       = (nextState == MissionState::TURNING)
@@ -354,10 +381,10 @@ void RacingNode::controlLoop()
 
             // -- Debug logging ------------------------------------------------
             RCLCPP_INFO(this->get_logger(),
-                "[%s] goal=%zu steer=%zu pos=(%.2f,%.2f) target=(%.2f,%.2f) "
+                "[%s] goal=%zu steer=%zu ld=%.1f pos=(%.2f,%.2f) target=(%.2f,%.2f) "
                 "dist=%.2f a=%.3f ap=%.3f steer=%.3f thr=%.2f brk=%.0f spd=%.2f vmax=%.1f",
                 stateName(nextState),
-                currentGoal, steerGoalIdx,
+                currentGoal, steerGoalIdx, lookaheadDist,
                 odom.pose.pose.position.x, odom.pose.pose.position.y,
                 steerGoal.x, steerGoal.y,
                 dist, alpha, alphaPreview, steering, throttle, brake,
