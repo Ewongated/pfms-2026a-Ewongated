@@ -88,19 +88,29 @@ private:
     // Steering state
     double prevAlpha_ = 0.0;  //!< Previous heading error for derivative damping
 
-    // Constants
+    // Constants -- shared
     static constexpr double      CONTROL_HZ            = 20.0;
-    static constexpr double      CRUISE_THROTTLE        = 0.5;
     static constexpr double      MAX_BRAKE              = 8000.0;
-    static constexpr double      CORNER_BRAKE           = 8000.0;
     static constexpr double      MAX_STEER              = 1.0;
     static constexpr double      WHEELBASE_M            = 2.65;
     static constexpr double      V_MAX                  = 8.0;
-    static constexpr double      CORNER_ALPHA_RAD       = 0.6;
+    static constexpr double      CORNER_ALPHA_RAD       = 0.4;  //!< Threshold to enter TURNING [rad] (~23 deg)
     static constexpr double      MIN_SPEED_FACTOR       = 0.3;
     static constexpr double      CORRIDOR_CHECK_DIST_M  = 15.0;
+
+    // Constants -- CRUISING state
+    static constexpr double      CRUISE_THROTTLE        = 0.5;
     static constexpr double      STEER_K                = 1.2;  //!< Nonlinear steering gain
     static constexpr double      STEER_KD               = 0.5;  //!< Derivative damping gain
     static constexpr std::size_t GOAL_LOOKAHEAD         = 6;    //!< Goals ahead to steer toward
+
+    // Constants -- TURNING state
+    static constexpr double      CORNER_BRAKE           = 8000.0;
+    static constexpr double      TURN_THROTTLE          = 0.3;       //!< Feathered throttle mid-corner
+    static constexpr double      TURN_V_MAX             = 4.5;       //!< Hard speed cap in TURNING [m/s]
+    static constexpr double      TURN_STEER_K           = 2.0;       //!< Tighter steering gain in TURNING
+    static constexpr double      TURN_STEER_KD          = 0.3;       //!< Derivative damping in TURNING
+    static constexpr std::size_t TURN_GOAL_LOOKAHEAD    = 2;         //!< Closer steer target in TURNING
+    static constexpr double      BRAKE_PREVIEW_DIST_M   = 6.0;       //!< Pre-corner braking distance [m]
 };
 #endif // RACINGNODE_H
