@@ -209,11 +209,33 @@ void RacingNode::controlLoop()
             const double dist = euclidean(odom, goal);
 
             // -- Overshot check -----------------------------------------------
-            const double yaw     = yawFromOdom(odom);
-            const double toGoalX = goal.x - odom.pose.pose.position.x;
-            const double toGoalY = goal.y - odom.pose.pose.position.y;
-            const double dot     = toGoalX * std::cos(yaw) + toGoalY * std::sin(yaw);
-            const bool   overshot = (dot < 0.0) && (dist > goalTolerance_);
+            // Use the path-tangent direction (previous goal -> current goal)
+            // as the reference instead of the vehicle's live yaw.  This
+            // prevents the dot product from firing spuriously as the car's
+            // heading rotates through a U-turn, which caused apex goals to be
+            // skipped en masse and the car to miss the hairpin entirely.
+            bool overshot = false;
+            if (currentGoal > 0) {
+                const geometry_msgs::msg::Point& prevGoal = goals[currentGoal - 1];
+                const double pathDx  = goal.x - prevGoal.x;
+                const double pathDy  = goal.y - prevGoal.y;
+                const double pathLen = std::hypot(pathDx, pathDy);
+                if (pathLen > 1e-6) {
+                    const double toGoalX = goal.x - odom.pose.pose.position.x;
+                    const double toGoalY = goal.y - odom.pose.pose.position.y;
+                    const double pathDot = toGoalX * (pathDx / pathLen)
+                                         + toGoalY * (pathDy / pathLen);
+                    overshot = (pathDot < 0.0) && (dist > goalTolerance_);
+                }
+            } else {
+                // No previous goal: fall back to vehicle-heading dot product
+                // for goal 0 only, where no path tangent exists yet.
+                const double yaw     = yawFromOdom(odom);
+                const double toGoalX = goal.x - odom.pose.pose.position.x;
+                const double toGoalY = goal.y - odom.pose.pose.position.y;
+                const double dot     = toGoalX * std::cos(yaw) + toGoalY * std::sin(yaw);
+                overshot = (dot < 0.0) && (dist > goalTolerance_);
+            }
 
             if (dist < goalTolerance_ || overshot) {
                 if (overshot)

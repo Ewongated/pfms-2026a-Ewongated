@@ -101,14 +101,14 @@ private:
     static constexpr double      CRUISE_THROTTLE        = 0.5;
     static constexpr double      STEER_K                = 1.2;  //!< Nonlinear steering gain
     static constexpr double      STEER_KD               = 0.5;  //!< Derivative damping gain
-    static constexpr std::size_t GOAL_LOOKAHEAD         = 6;    //!< Goals ahead to steer toward
+    static constexpr std::size_t GOAL_LOOKAHEAD         = 15;    //!< Goals ahead to steer toward
 
     // Constants -- TURNING state
     static constexpr double      CORNER_BRAKE           = 8000.0;
     static constexpr double      TURN_THROTTLE          = 0.3;       //!< Feathered throttle mid-corner
-    static constexpr double      TURN_V_MAX             = 4.5;       //!< Hard speed cap in TURNING [m/s]
-    static constexpr double      TURN_STEER_K           = 7.0;       //!< Tighter steering gain when corner imminent
-    static constexpr double      TURN_STEER_KD          = 0.2;       //!< Derivative damping when corner imminent
+    static constexpr double      TURN_V_MAX             = 7.0;       //!< Hard speed cap in TURNING [m/s]
+    static constexpr double      TURN_STEER_K           = 10.0;       //!< Tighter steering gain when corner imminent
+    static constexpr double      TURN_STEER_KD          = 0.1;       //!< Derivative damping when corner imminent
     static constexpr std::size_t TURN_GOAL_LOOKAHEAD    = 3;         //!< Closer steer target when corner imminent
     static constexpr double      BRAKE_PREVIEW_DIST_M   = 6.0;       //!< Pre-corner braking distance [m]
 };

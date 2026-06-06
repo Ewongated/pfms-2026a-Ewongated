@@ -90,21 +90,31 @@ public:
 private:
     /**
      * @brief Converts a scan ray index to a Cartesian point in the **laser frame**.
+     *
+     * Operates on the supplied scan snapshot rather than the member laserScan_,
+     * so it is safe to call without holding mtx_.
+     *
+     * @param scan  Scan snapshot to read from.
      * @param index Ray index.
      * @return 2-D Cartesian point (z = 0).
      */
-    geometry_msgs::msg::Point polarToCart(unsigned int index) const;
+    static geometry_msgs::msg::Point polarToCart(
+        const sensor_msgs::msg::LaserScan& scan, unsigned int index);
 
     /**
-     * @brief Transforms a laser-frame point into the world frame using odom_.
+     * @brief Transforms a laser-frame point into the world frame.
      *
      * Accounts for the 3.725 m forward offset of the laser from the reported
-     * odometry origin.
+     * odometry origin. Operates on the supplied odom snapshot rather than the
+     * member odom_, so it is safe to call without holding mtx_.
      *
      * @param laserPt Point in laser frame.
+     * @param odom    Odometry snapshot to use for the transform.
      * @return Corresponding world-frame point.
      */
-    geometry_msgs::msg::Point laserToWorld(const geometry_msgs::msg::Point& laserPt) const;
+    static geometry_msgs::msg::Point laserToWorld(
+        const geometry_msgs::msg::Point&  laserPt,
+        const nav_msgs::msg::Odometry&    odom);
 
     /**
      * @brief Returns the yaw extracted from an odometry quaternion [rad].
@@ -112,6 +122,13 @@ private:
      * @return Yaw angle in [-pi, pi].
      */
     static double yawFromOdom(const nav_msgs::msg::Odometry& odom);
+
+    /**
+     * @brief Returns the median of a non-empty vector (sorts in place).
+     * @param v Vector of doubles (must not be empty).
+     * @return Median value.
+     */
+    static double median(std::vector<double>& v);
 
 private:
     sensor_msgs::msg::LaserScan laserScan_; //!< Most recent laser scan

@@ -105,12 +105,14 @@ bool LaserProcessing::goalInCorridor(const geometry_msgs::msg::Point& goal) cons
     if (localX <= 0.0) return false;
 
     // Collect left-wall (positive local Y) and right-wall (negative local Y)
-    // range readings in the forward half of the scan.
-    const int    nRays      = static_cast<int>(scan.ranges.size());
-    double       leftSumY   = 0.0;
-    double       rightSumY  = 0.0;
-    unsigned int leftCount  = 0;
-    unsigned int rightCount = 0;
+    // lateral positions for all forward-facing valid readings.
+    //
+    // Fix: use median (not mean) for edge estimation to match trackCentreAhead()
+    // and to be robust against noisy or out-of-range wall returns.
+    const int nRays = static_cast<int>(scan.ranges.size());
+    std::vector<double> leftY, rightY;
+    leftY.reserve(32);
+    rightY.reserve(32);
 
     for (int i = 0; i < nRays; ++i) {
         const double angle = scan.angle_min + i * scan.angle_increment;
@@ -122,15 +124,15 @@ bool LaserProcessing::goalInCorridor(const geometry_msgs::msg::Point& goal) cons
 
         if (px <= 0.0) continue;
 
-        if (py > 0.0) { leftSumY  += py; ++leftCount;  }
-        else          { rightSumY += py; ++rightCount; }
+        if (py > 0.0) leftY.push_back(py);
+        else          rightY.push_back(py);
     }
 
-    if (leftCount  < MIN_WALL_READINGS_PER_SIDE ||
-        rightCount < MIN_WALL_READINGS_PER_SIDE) return false;
+    if (leftY.size()  < MIN_WALL_READINGS_PER_SIDE ||
+        rightY.size() < MIN_WALL_READINGS_PER_SIDE) return false;
 
-    const double leftEdge  = leftSumY  / leftCount;
-    const double rightEdge = rightSumY / rightCount;
+    const double leftEdge  = median(leftY);
+    const double rightEdge = median(rightY);
 
     const double minY = rightEdge - CORRIDOR_TOLERANCE_M;
     const double maxY = leftEdge  + CORRIDOR_TOLERANCE_M;
@@ -169,12 +171,6 @@ std::optional<geometry_msgs::msg::Point> LaserProcessing::trackCentreAhead() con
     if (leftY.size()  < MIN_WALL_READINGS_PER_SIDE ||
         rightY.size() < MIN_WALL_READINGS_PER_SIDE) return std::nullopt;
 
-    auto median = [](std::vector<double>& v) -> double {
-        std::sort(v.begin(), v.end());
-        const std::size_t n = v.size();
-        return (n % 2 == 0) ? (v[n/2 - 1] + v[n/2]) / 2.0 : v[n/2];
-    };
-
     const double leftMedY  = median(leftY);
     const double rightMedY = median(rightY);
     const double centreY   = (leftMedY + rightMedY) / 2.0;
@@ -184,11 +180,15 @@ std::optional<geometry_msgs::msg::Point> LaserProcessing::trackCentreAhead() con
     laserPt.y = centreY;
     laserPt.z = 0.0;
 
-    return laserToWorld(laserPt);
+    // Pass the odom snapshot explicitly -- laserToWorld() no longer touches odom_.
+    return laserToWorld(laserPt, odom);
 }
 
 unsigned int LaserProcessing::countSegments() const
 {
+    // Take a snapshot under the lock, then operate entirely on the local copy.
+    // This prevents a data race: the original code called polarToCart() after
+    // releasing the lock, which read laserScan_ without protection.
     std::unique_lock<std::mutex> lock(mtx_);
     const sensor_msgs::msg::LaserScan scan = laserScan_;
     lock.unlock();
@@ -205,7 +205,8 @@ unsigned int LaserProcessing::countSegments() const
             continue;
         }
 
-        const geometry_msgs::msg::Point curPt = polarToCart(i);
+        // Pass the local scan snapshot; no member access after lock release.
+        const geometry_msgs::msg::Point curPt = polarToCart(scan, i);
 
         if (!inSegment) {
             ++segmentCount;
@@ -223,10 +224,14 @@ unsigned int LaserProcessing::countSegments() const
 
 // ── Private helpers ───────────────────────────────────────────────────────────
 
-geometry_msgs::msg::Point LaserProcessing::polarToCart(unsigned int index) const
+// Fix: accepts a scan snapshot so the caller can pass a locally-held copy
+// rather than relying on the member laserScan_, which may be updated by
+// newScan() on another thread after the lock is released.
+geometry_msgs::msg::Point LaserProcessing::polarToCart(
+    const sensor_msgs::msg::LaserScan& scan, unsigned int index)
 {
-    const double angle = laserScan_.angle_min + laserScan_.angle_increment * index;
-    const float  r     = laserScan_.ranges[index];
+    const double angle = scan.angle_min + scan.angle_increment * index;
+    const float  r     = scan.ranges[index];
     geometry_msgs::msg::Point pt;
     pt.x = static_cast<double>(r) * std::cos(angle);
     pt.y = static_cast<double>(r) * std::sin(angle);
@@ -234,12 +239,16 @@ geometry_msgs::msg::Point LaserProcessing::polarToCart(unsigned int index) const
     return pt;
 }
 
+// Fix: accepts an odom snapshot so the caller can pass a locally-held copy
+// rather than relying on the member odom_, which may be updated by
+// newOdom() on another thread after the lock is released.
 geometry_msgs::msg::Point LaserProcessing::laserToWorld(
-    const geometry_msgs::msg::Point& laserPt) const
+    const geometry_msgs::msg::Point& laserPt,
+    const nav_msgs::msg::Odometry&   odom)
 {
-    const double yaw    = yawFromOdom(odom_);
-    const double laserX = odom_.pose.pose.position.x + LASER_OFFSET_M * std::cos(yaw);
-    const double laserY = odom_.pose.pose.position.y + LASER_OFFSET_M * std::sin(yaw);
+    const double yaw    = yawFromOdom(odom);
+    const double laserX = odom.pose.pose.position.x + LASER_OFFSET_M * std::cos(yaw);
+    const double laserY = odom.pose.pose.position.y + LASER_OFFSET_M * std::sin(yaw);
 
     geometry_msgs::msg::Point worldPt;
     worldPt.x = laserX + laserPt.x * std::cos(yaw) - laserPt.y * std::sin(yaw);
@@ -254,4 +263,13 @@ double LaserProcessing::yawFromOdom(const nav_msgs::msg::Odometry& odom)
     const double siny_cosp = 2.0 * (q.w * q.z + q.x * q.y);
     const double cosy_cosp = 1.0 - 2.0 * (q.y * q.y + q.z * q.z);
     return std::atan2(siny_cosp, cosy_cosp);
+}
+
+// Fix: extracted from trackCentreAhead() into a shared static helper so both
+// trackCentreAhead() and goalInCorridor() use identical median logic.
+double LaserProcessing::median(std::vector<double>& v)
+{
+    std::sort(v.begin(), v.end());
+    const std::size_t n = v.size();
+    return (n % 2 == 0) ? (v[n/2 - 1] + v[n/2]) / 2.0 : v[n/2];
 }
