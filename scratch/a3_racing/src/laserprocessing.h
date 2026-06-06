@@ -119,14 +119,14 @@ private:
     bool                        hasOdom_;   //!< True once at least one odom message received
     mutable std::mutex          mtx_;       //!< Protects laserScan_ and odom_
 
-    // ?? Tuning constants ?????????????????????????????????????????????????????
-    static constexpr double LASER_OFFSET_M           = 3.725; //!< Laser forward offset from odom origin [m]
-    static constexpr double OBSTACLE_HALF_ANGLE_DEG  = 15.0;  //!< Half-width of forward obstacle-check cone [deg]
-    static constexpr double OBSTACLE_WALL_FRACTION   = 0.55;  //!< Obstacle threshold as fraction of estimated wall range
-    static constexpr double OBSTACLE_MIN_RANGE_M      = 1.0;   //!< Absolute minimum obstacle detection range [m]
-    static constexpr double CORRIDOR_TOLERANCE_M     = 0.2;   //!< Allowed lateral deviation from corridor centre [m]
-    static constexpr unsigned int MIN_WALL_READINGS_PER_SIDE = 3;  //!< Minimum valid rays needed per wall side
-    static constexpr unsigned int MIN_OBSTACLE_RAYS          = 3;  //!< Min consecutive close rays to confirm obstacle
+    static constexpr double LASER_OFFSET_M            = 3.725;
+    static constexpr double OBSTACLE_HALF_ANGLE_DEG   = 8.0;
+    static constexpr double HALF_TRACK_WIDTH_M        = 4.0;   //!< Half track width from spec [m]
+    static constexpr double TRACK_TOLERANCE_M         = 0.5;   //!< Tolerance on track width per spec [m]
+    static constexpr double OBSTACLE_MAX_RANGE_M      = HALF_TRACK_WIDTH_M - TRACK_TOLERANCE_M; //!< Max range for non-wall obstacle [m]
+    static constexpr double CORRIDOR_TOLERANCE_M      = 0.2;
+    static constexpr unsigned int MIN_WALL_READINGS_PER_SIDE = 3;
+    static constexpr unsigned int MIN_OBSTACLE_RAYS          = 3;
 };
 
 #endif // LASERPROCESSING_H
