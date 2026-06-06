@@ -1,0 +1,32 @@
+[0.023s] Invoking command in '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/build/a3_racing': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/humble /usr/bin/cmake --build /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/build/a3_racing -- -j8 -l8
+[0.123s] [ 18%] Built target laserprocessing
+[0.133s] [ 36%] Built target gtest_main
+[0.139s] [ 54%] Built target gtest
+[0.170s] [ 63%] [32mBuilding CXX object CMakeFiles/racing_node.dir/src/main_racing.cpp.o[0m
+[0.179s] [ 72%] [32mBuilding CXX object CMakeFiles/racing_node.dir/src/racingnode.cpp.o[0m
+[0.211s] [ 90%] Built target test_racing
+[25.685s] [100%] [32m[1mLinking CXX executable racing_node[0m
+[29.557s] [100%] Built target racing_node
+[29.589s] Invoked command in '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/build/a3_racing' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/humble /usr/bin/cmake --build /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/build/a3_racing -- -j8 -l8
+[29.607s] Invoking command in '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/build/a3_racing': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/humble /usr/bin/cmake --install /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/build/a3_racing
+[29.617s] -- Install configuration: ""
+[29.617s] -- Installing: /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/lib/a3_racing/racing_node
+[29.634s] -- Set runtime path of "/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/lib/a3_racing/racing_node" to ""
+[29.635s] -- Up-to-date: /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/a3_racing/data
+[29.635s] -- Up-to-date: /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/a3_racing/data/sample
+[29.638s] -- Up-to-date: /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/ament_index/resource_index/package_run_dependencies/a3_racing
+[29.638s] -- Up-to-date: /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/ament_index/resource_index/parent_prefix_path/a3_racing
+[29.639s] -- Up-to-date: /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/a3_racing/environment/ament_prefix_path.sh
+[29.639s] -- Up-to-date: /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/a3_racing/environment/ament_prefix_path.dsv
+[29.639s] -- Up-to-date: /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/a3_racing/environment/path.sh
+[29.639s] -- Up-to-date: /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/a3_racing/environment/path.dsv
+[29.640s] -- Up-to-date: /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/a3_racing/local_setup.bash
+[29.640s] -- Up-to-date: /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/a3_racing/local_setup.sh
+[29.641s] -- Up-to-date: /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/a3_racing/local_setup.zsh
+[29.641s] -- Up-to-date: /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/a3_racing/local_setup.dsv
+[29.641s] -- Installing: /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/a3_racing/package.dsv
+[29.641s] -- Up-to-date: /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/ament_index/resource_index/packages/a3_racing
+[29.641s] -- Up-to-date: /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/a3_racing/cmake/a3_racingConfig.cmake
+[29.641s] -- Up-to-date: /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/a3_racing/cmake/a3_racingConfig-version.cmake
+[29.641s] -- Up-to-date: /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/a3_racing/package.xml
+[29.642s] Invoked command in '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/build/a3_racing' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/humble /usr/bin/cmake --install /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/build/a3_racing

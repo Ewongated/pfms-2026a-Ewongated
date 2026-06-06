@@ -58,13 +58,15 @@ RacingNode::~RacingNode()
     if (controlThread_.joinable()) controlThread_.join();
 }
 
-// Callbacks
+// --- Callbacks ----------------------------------------------------------------
 
 void RacingNode::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     odom_    = *msg;
     hasOdom_ = true;
+
+    if (laserProc_) laserProc_->newOdom(*msg);
 }
 
 void RacingNode::laserCallback(const sensor_msgs::msg::LaserScan::SharedPtr msg)
@@ -72,6 +74,13 @@ void RacingNode::laserCallback(const sensor_msgs::msg::LaserScan::SharedPtr msg)
     std::lock_guard<std::mutex> lock(mutex_);
     laser_    = *msg;
     hasLaser_ = true;
+
+    if (!laserProc_) {
+        laserProc_ = std::make_shared<LaserProcessing>(*msg);
+        RCLCPP_INFO(this->get_logger(), "LaserProcessing initialised.");
+    } else {
+        laserProc_->newScan(*msg);
+    }
 }
 
 void RacingNode::goalsCallback(const geometry_msgs::msg::PoseArray::SharedPtr msg)
@@ -129,7 +138,7 @@ void RacingNode::missionService(
     res->message = ss.str();
 }
 
-// Control loop
+// --- Control loop -------------------------------------------------------------
 
 void RacingNode::controlLoop()
 {
@@ -137,11 +146,13 @@ void RacingNode::controlLoop()
 
     while (running_.load() && rclcpp::ok()) {
 
-        nav_msgs::msg::Odometry odom;
-        MissionState state;
+        nav_msgs::msg::Odometry                odom;
+        MissionState                           state;
         std::vector<geometry_msgs::msg::Point> goals;
-        std::size_t currentGoal;
-        bool haveOdom;
+        std::size_t                            currentGoal;
+        bool                                   haveOdom;
+        bool                                   haveLaser;
+        std::shared_ptr<LaserProcessing>       laserProc;
 
         {
             std::lock_guard<std::mutex> lock(mutex_);
@@ -150,6 +161,8 @@ void RacingNode::controlLoop()
             goals       = goals_;
             currentGoal = currentGoal_;
             haveOdom    = hasOdom_;
+            haveLaser   = hasLaser_;
+            laserProc   = laserProc_;
         }
 
         switch (state) {
@@ -164,6 +177,7 @@ void RacingNode::controlLoop()
                 break;
             }
 
+            // -- All goals exhausted ------------------------------------------
             if (currentGoal >= goals.size()) {
                 RCLCPP_INFO(this->get_logger(), "All goals reached -- COMPLETE.");
                 publishStop();
@@ -173,23 +187,50 @@ void RacingNode::controlLoop()
                 break;
             }
 
+            // -- Obstacle check -----------------------------------------------
+            // If anything non-wall is directly ahead, end the mission.
+            if (haveLaser && laserProc) {
+                if (laserProc->obstacleInFront()) {
+                    RCLCPP_WARN(this->get_logger(),
+                        "Obstacle detected ahead -- ending mission.");
+                    publishStop();
+                    publishWaypoints();
+                    std::lock_guard<std::mutex> lock(mutex_);
+                    state_ = MissionState::COMPLETE;
+                    break;
+                }
+            }
+
             const geometry_msgs::msg::Point& goal = goals[currentGoal];
             const double dist = euclidean(odom, goal);
 
-            // Overshoot detection
+            // -- Goal corridor validation -------------------------------------
+            // Only check goals within CORRIDOR_CHECK_DIST_M. Beyond that the
+            // laser geometry is unreliable around corners and valid goals may
+            // be incorrectly rejected.
+            if (haveLaser && laserProc && dist <= CORRIDOR_CHECK_DIST_M) {
+                if (!laserProc->goalInCorridor(goals[currentGoal])) {
+                    RCLCPP_WARN(this->get_logger(),
+                        "Goal %zu is outside the track corridor -- skipping.",
+                        currentGoal);
+                    std::lock_guard<std::mutex> lock(mutex_);
+                    currentGoal_++;
+                    break;
+                }
+            }
+
+            // -- Overshot check -----------------------------------------------
             const double yaw     = yawFromOdom(odom);
             const double toGoalX = goal.x - odom.pose.pose.position.x;
             const double toGoalY = goal.y - odom.pose.pose.position.y;
             const double dot     = toGoalX * std::cos(yaw) + toGoalY * std::sin(yaw);
-            const bool overshot  = (dot < 0.0) && (dist > goalTolerance_);
-
-            RCLCPP_INFO(this->get_logger(),
-                "Goal %zu | dist=%.2f | dot=%.2f | overshot=%d",
-                currentGoal, dist, dot, overshot ? 1 : 0);
+            const bool   overshot = (dot < 0.0) && (dist > goalTolerance_);
 
             if (dist < goalTolerance_ || overshot) {
-                if (overshot) RCLCPP_WARN(this->get_logger(), "Goal %zu overshot -- skipping.", currentGoal);
-                else          RCLCPP_INFO(this->get_logger(), "Goal %zu reached.", currentGoal);
+                if (overshot)
+                    RCLCPP_WARN(this->get_logger(), "Goal %zu overshot -- skipping.", currentGoal);
+                else
+                    RCLCPP_INFO(this->get_logger(), "Goal %zu reached.", currentGoal);
 
                 {
                     std::lock_guard<std::mutex> lock(mutex_);
@@ -200,38 +241,37 @@ void RacingNode::controlLoop()
                 break;
             }
 
-            // Pure Pursuit -- find look-ahead point
-            const double cx = odom.pose.pose.position.x;
-            const double cy = odom.pose.pose.position.y;
-            geometry_msgs::msg::Point lookAhead = goal;
-            std::size_t lookAheadIdx = currentGoal;
+            // -- Steering -----------------------------------------------------
+            // Compute heading error (alpha) from current pose to active goal,
+            // then apply the bicycle-model Pure Pursuit formula.
+            const double alpha    = computeAlpha(odom, goal);
+            const double steerRaw = std::atan2(
+                2.0 * WHEELBASE_M * std::sin(alpha), dist);
+            const double steering = std::clamp(steerRaw, -MAX_STEER, MAX_STEER);
 
-            for (std::size_t k = currentGoal; k < goals.size(); ++k) {
-                const double dx = goals[k].x - cx;
-                const double dy = goals[k].y - cy;
-                lookAhead    = goals[k];
-                lookAheadIdx = k;
-                if (std::sqrt(dx*dx + dy*dy) >= LOOKAHEAD_M) break;
-            }
-
-            RCLCPP_INFO(this->get_logger(),
-                "Look-ahead -> goal %zu (%.2f, %.2f)",
-                lookAheadIdx, lookAhead.x, lookAhead.y);
-
-            const double steering = computeSteering(odom, lookAhead);
-
-            double throttle = CRUISE_THROTTLE;
+            // -- Speed planning -----------------------------------------------
+            // Throttle and brake are mutually exclusive.
+            // On sharp corners (|alpha| > CORNER_ALPHA_RAD) apply light brake.
+            // Otherwise scale throttle by cos(alpha) so tighter arcs get less
+            // throttle, clamped to a minimum fraction to avoid stalling.
+            double throttle = 0.0;
             double brake    = 0.0;
 
-            if (dist < SLOW_ZONE_M) {
-                throttle = std::max(CRUISE_THROTTLE * (dist / SLOW_ZONE_M), 0.1);
+            if (std::abs(alpha) > CORNER_ALPHA_RAD) {
+                brake = CORNER_BRAKE;
+            } else {
+                const double speedFactor = std::max(std::cos(alpha), MIN_SPEED_FACTOR);
+                throttle = CRUISE_THROTTLE * speedFactor;
             }
 
-            if (cornerAhead(goals, currentGoal, odom)) {
-                throttle = std::min(throttle, CORNER_THROTTLE);
-                brake    = CORNER_BRAKE;
-                RCLCPP_INFO(this->get_logger(), "Corner ahead -- slowing.");
-            }
+            // -- Debug logging ------------------------------------------------
+            RCLCPP_INFO(this->get_logger(),
+                "[Nav] goal=%zu pos=(%.2f,%.2f) target=(%.2f,%.2f) "
+                "dist=%.2f alpha=%.3f steer=%.3f thr=%.2f brk=%.0f",
+                currentGoal,
+                odom.pose.pose.position.x, odom.pose.pose.position.y,
+                goal.x, goal.y,
+                dist, alpha, steering, throttle, brake);
 
             publishCommand(throttle, brake, steering);
             break;
@@ -246,49 +286,23 @@ void RacingNode::controlLoop()
     }
 }
 
-// Corner detection
+// --- Heading error ------------------------------------------------------------
 
-bool RacingNode::cornerAhead(const std::vector<geometry_msgs::msg::Point>& goals,
-                              std::size_t currentGoal,
-                              const nav_msgs::msg::Odometry& odom) const
-{
-    const double cx = odom.pose.pose.position.x;
-    const double cy = odom.pose.pose.position.y;
-
-    for (std::size_t k = currentGoal; k + 1 < goals.size(); ++k) {
-        const double dx = goals[k].x - cx;
-        const double dy = goals[k].y - cy;
-        if (std::sqrt(dx*dx + dy*dy) > CORNER_LOOKAHEAD_M) break;
-
-        const double bear1 = std::atan2(goals[k].y   - cy,         goals[k].x   - cx);
-        const double bear2 = std::atan2(goals[k+1].y - goals[k].y, goals[k+1].x - goals[k].x);
-        if (std::abs(normaliseAngle(bear2 - bear1)) > CORNER_ANGLE_THRESH) return true;
-    }
-    return false;
-}
-
-// Steering
-
-double RacingNode::computeSteering(const nav_msgs::msg::Odometry& odom,
-                                   const geometry_msgs::msg::Point& lookAhead) const
+double RacingNode::computeAlpha(const nav_msgs::msg::Odometry& odom,
+                                 const geometry_msgs::msg::Point& target) const
 {
     const double yaw = yawFromOdom(odom);
-    const double cx  = odom.pose.pose.position.x;
-    const double cy  = odom.pose.pose.position.y;
-
-    const double dx = lookAhead.x - cx;
-    const double dy = lookAhead.y - cy;
-    const double ld = std::sqrt(dx*dx + dy*dy);
-
+    const double dx  = target.x - odom.pose.pose.position.x;
+    const double dy  = target.y - odom.pose.pose.position.y;
+    const double ld  = std::hypot(dx, dy);
     if (ld < 1e-6) return 0.0;
 
     const double localX =  dx * std::cos(-yaw) - dy * std::sin(-yaw);
     const double localY =  dx * std::sin(-yaw) + dy * std::cos(-yaw);
-    const double alpha  = std::atan2(localY, localX);
-
-    const double steer = std::atan2(2.0 * WHEELBASE_M * std::sin(alpha), ld);
-    return std::clamp(steer, -MAX_STEER, MAX_STEER);
+    return std::atan2(localY, localX);
 }
+
+// --- Publish helpers ----------------------------------------------------------
 
 void RacingNode::publishStop()
 {
@@ -306,7 +320,7 @@ void RacingNode::publishCommand(double throttle, double brake, double steering)
     pubSteering_->publish(s);
 }
 
-// Waypoints
+// --- Waypoints ----------------------------------------------------------------
 
 void RacingNode::publishWaypoints()
 {
@@ -362,7 +376,7 @@ void RacingNode::publishWaypoints()
     pubWaypoints_->publish(poseArray);
 }
 
-// Static helpers
+// --- Static helpers -----------------------------------------------------------
 
 double RacingNode::yawFromOdom(const nav_msgs::msg::Odometry& odom)
 {

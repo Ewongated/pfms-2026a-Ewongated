@@ -40,16 +40,13 @@ private:
 
     // Control
     void controlLoop();
-    double computeSteering(const nav_msgs::msg::Odometry& odom,
-                           const geometry_msgs::msg::Point& lookAhead) const;
-    bool cornerAhead(const std::vector<geometry_msgs::msg::Point>& goals,
-                     std::size_t currentGoal,
-                     const nav_msgs::msg::Odometry& odom) const;
     void publishStop();
     void publishCommand(double throttle, double brake, double steering);
     void publishWaypoints();
 
     // Helpers
+    double computeAlpha(const nav_msgs::msg::Odometry& odom,
+                        const geometry_msgs::msg::Point& target) const;
     static double yawFromOdom(const nav_msgs::msg::Odometry& odom);
     static double normaliseAngle(double angle);
     static double euclidean(const nav_msgs::msg::Odometry& odom,
@@ -67,6 +64,9 @@ private:
     rclcpp::Publisher<geometry_msgs::msg::PoseArray>::SharedPtr        pubWaypoints_;
 
     rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr service_;
+
+    // Laser processing
+    std::shared_ptr<LaserProcessing> laserProc_;
 
     // Shared state
     nav_msgs::msg::Odometry                odom_;
@@ -88,20 +88,15 @@ private:
     bool   advanced_;
 
     // Constants
-    static constexpr double CONTROL_HZ          = 20.0;
-    static constexpr double CRUISE_THROTTLE     = 0.25;
-    static constexpr double MAX_BRAKE           = 8000.0;
-    static constexpr double MAX_STEER           = 0.8;
-    static constexpr double SLOW_ZONE_M         = 10.0;
-    static constexpr double WAYPOINT_SPACING_M  = 3.0;
-    static constexpr double LOOKAHEAD_M         = 6.0;
-    static constexpr double WHEELBASE_M         = 2.65;
-    static constexpr double CORNER_LOOKAHEAD_M  = 30.0;
-    static constexpr double CORNER_ANGLE_THRESH = 0.3;
-    static constexpr double CORNER_THROTTLE     = 0.12;
-    static constexpr double CORNER_BRAKE        = 500.0;
+    static constexpr double CONTROL_HZ       = 20.0;
+    static constexpr double CRUISE_THROTTLE  = 0.25;
+    static constexpr double MAX_BRAKE        = 8000.0;
+    static constexpr double CORNER_BRAKE     = 500.0;  //!< Light brake torque on sharp corners [Nm]
+    static constexpr double MAX_STEER        = 1.0;
+    static constexpr double WHEELBASE_M      = 2.65;
+    static constexpr double CORNER_ALPHA_RAD      = 0.5;   //!< Heading error above which braking is applied [rad]
+    static constexpr double MIN_SPEED_FACTOR       = 0.3;   //!< Minimum cos(alpha) throttle multiplier [0-1]
+    static constexpr double CORRIDOR_CHECK_DIST_M  = 15.0;  //!< Max distance at which goalInCorridor is checked [m]
 };
 
-#endif // RACINGNODE_HWaiting for Gazebo...
-
-
+#endif // RACINGNODE_H
