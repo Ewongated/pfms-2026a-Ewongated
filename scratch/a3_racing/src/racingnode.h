@@ -110,7 +110,7 @@ private:
     static constexpr double      TURN_V_MAX             = 4.5;       //!< Hard speed cap in TURNING [m/s]
     static constexpr double      TURN_STEER_K           = 2.0;       //!< Tighter steering gain in TURNING
     static constexpr double      TURN_STEER_KD          = 0.3;       //!< Derivative damping in TURNING
-    static constexpr std::size_t TURN_GOAL_LOOKAHEAD    = 2;         //!< Closer steer target in TURNING
+    static constexpr std::size_t TURN_GOAL_LOOKAHEAD    = 4;         //!< Closer steer target in TURNING
     static constexpr double      BRAKE_PREVIEW_DIST_M   = 6.0;       //!< Pre-corner braking distance [m]
 };
 #endif // RACINGNODE_H
