@@ -14,7 +14,7 @@ RacingNode::RacingNode()
       state_(MissionState::IDLE),
       running_(true)
 {
-    this->declare_parameter<double>("goal_tolerance", 1.5);
+    this->declare_parameter<double>("goal_tolerance", 0.8);
     this->declare_parameter<bool>("advanced", false);
 
     goalTolerance_ = this->get_parameter("goal_tolerance").as_double();
@@ -205,19 +205,21 @@ void RacingNode::controlLoop()
             const double dist = euclidean(odom, goal);
 
             // -- Goal corridor validation -------------------------------------
-            // Only check goals within CORRIDOR_CHECK_DIST_M. Beyond that the
-            // laser geometry is unreliable around corners and valid goals may
-            // be incorrectly rejected.
-            if (haveLaser && laserProc && dist <= CORRIDOR_CHECK_DIST_M) {
-                if (!laserProc->goalInCorridor(goals[currentGoal])) {
-                    RCLCPP_WARN(this->get_logger(),
-                        "Goal %zu is outside the track corridor -- skipping.",
-                        currentGoal);
-                    std::lock_guard<std::mutex> lock(mutex_);
-                    currentGoal_++;
-                    break;
-                }
-            }
+            // Temporarily disabled -- goalInCorridor() was skipping valid goals
+            // due to the car being off-centre on straights, causing the active
+            // goal to jump too far ahead and the car to miss corners entirely.
+            // To be reintroduced once straight tracking is confirmed stable.
+            //
+            // if (haveLaser && laserProc && dist <= CORRIDOR_CHECK_DIST_M) {
+            //     if (!laserProc->goalInCorrider(goals[currentGoal])) {
+            //         RCLCPP_WARN(this->get_logger(),
+            //             "Goal %zu is outside the track corridor -- skipping.",
+            //             currentGoal);
+            //         std::lock_guard<std::mutex> lock(mutex_);
+            //         currentGoal_++;
+            //         break;
+            //     }
+            // }
 
             // -- Overshot check -----------------------------------------------
             const double yaw     = yawFromOdom(odom);
@@ -250,18 +252,23 @@ void RacingNode::controlLoop()
             const double steering = std::clamp(steerRaw, -MAX_STEER, MAX_STEER);
 
             // -- Speed planning -----------------------------------------------
-            // Throttle and brake are mutually exclusive.
-            // On sharp corners (|alpha| > CORNER_ALPHA_RAD) apply light brake.
-            // Otherwise scale throttle by cos(alpha) so tighter arcs get less
-            // throttle, clamped to a minimum fraction to avoid stalling.
+            // Compute a target speed scaled by heading error -- tighter corners
+            // get a lower target. Throttle and brake are mutually exclusive:
+            // brake only fires when the car is both in a sharp corner AND
+            // already exceeding the corner target speed. This prevents the car
+            // from braking itself to a standstill on slow corners.
+            const double currentSpeed = std::hypot(
+                odom.twist.twist.linear.x, odom.twist.twist.linear.y);
+            const double speedFactor  = std::max(std::cos(alpha), MIN_SPEED_FACTOR);
+            const double targetSpeed  = V_MAX * speedFactor;
+
             double throttle = 0.0;
             double brake    = 0.0;
 
-            if (std::abs(alpha) > CORNER_ALPHA_RAD) {
+            if (std::abs(alpha) > CORNER_ALPHA_RAD && currentSpeed > targetSpeed) {
                 brake = CORNER_BRAKE;
             } else {
-                const double speedFactor = std::max(std::cos(alpha), MIN_SPEED_FACTOR);
-                throttle = CRUISE_THROTTLE * speedFactor;
+                throttle = (currentSpeed < targetSpeed) ? CRUISE_THROTTLE : 0.0;
             }
 
             // -- Debug logging ------------------------------------------------

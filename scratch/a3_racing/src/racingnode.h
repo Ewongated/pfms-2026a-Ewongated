@@ -94,7 +94,8 @@ private:
     static constexpr double CORNER_BRAKE     = 500.0;  //!< Light brake torque on sharp corners [Nm]
     static constexpr double MAX_STEER        = 1.0;
     static constexpr double WHEELBASE_M      = 2.65;
-    static constexpr double CORNER_ALPHA_RAD      = 0.5;   //!< Heading error above which braking is applied [rad]
+    static constexpr double V_MAX                  = 5.0;   //!< Maximum target speed [m/s]
+    static constexpr double CORNER_ALPHA_RAD       = 0.4;   //!< Heading error above which braking is applied [rad]
     static constexpr double MIN_SPEED_FACTOR       = 0.3;   //!< Minimum cos(alpha) throttle multiplier [0-1]
     static constexpr double CORRIDOR_CHECK_DIST_M  = 15.0;  //!< Max distance at which goalInCorridor is checked [m]
 };
