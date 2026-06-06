@@ -14,7 +14,7 @@ RacingNode::RacingNode()
       state_(MissionState::IDLE),
       running_(true)
 {
-    this->declare_parameter<double>("goal_tolerance", 0.6);
+    this->declare_parameter<double>("goal_tolerance", 0.03);
     this->declare_parameter<bool>("advanced", false);
 
     goalTolerance_ = this->get_parameter("goal_tolerance").as_double();
@@ -165,9 +165,6 @@ void RacingNode::controlLoop()
             laserProc   = laserProc_;
         }
 
-        // Pending state/goal updates are written back to shared state at the
-        // end of each tick, AFTER all publish calls, to avoid re-entrant
-        // mutex acquisition inside publishWaypoints().
         MissionState pendingState   = state;
         std::size_t  pendingGoal    = currentGoal;
         bool         doPublishWaypoints = false;
@@ -182,8 +179,6 @@ void RacingNode::controlLoop()
             publishStop();
             break;
 
-        //    Both states share the same planning pipeline; the transition between
-        //    them is determined each tick by the heading error alpha.
         case MissionState::CRUISING:
         case MissionState::TURNING: {
             if (!haveOdom) {
@@ -195,8 +190,6 @@ void RacingNode::controlLoop()
             if (currentGoal >= goals.size()) {
                 RCLCPP_INFO(this->get_logger(), "All goals reached -- COMPLETE.");
                 publishStop();
-                // FIX (Bug 1): defer state write and waypoint publish to after
-                // the switch so mutex_ is not held when publishWaypoints() runs.
                 pendingState        = MissionState::COMPLETE;
                 doPublishWaypoints  = true;
                 break;
@@ -207,7 +200,6 @@ void RacingNode::controlLoop()
                 RCLCPP_WARN(this->get_logger(),
                     "Obstacle detected ahead -- ending mission.");
                 publishStop();
-                // FIX (Bug 1): same deferred pattern here.
                 pendingState        = MissionState::COMPLETE;
                 doPublishWaypoints  = true;
                 break;
@@ -230,14 +222,9 @@ void RacingNode::controlLoop()
                 else
                     RCLCPP_INFO(this->get_logger(), "Goal %zu reached.", currentGoal);
 
-                // FIX (Bug 1): accumulate writes; apply after publish calls.
                 pendingGoal        = currentGoal + 1;
                 doPublishWaypoints = true;
-                // prevAlpha_ reset is safe to do here (not mutex-protected field
-                // in the hot path, only written by the control thread itself).
                 prevAlpha_ = 0.0;
-                // Still need to push the waypoint into waypoints_ -- do it now
-                // while we have local copies, then publish after the switch.
                 {
                     std::lock_guard<std::mutex> lock(mutex_);
                     waypoints_.push_back(goal);
@@ -250,35 +237,28 @@ void RacingNode::controlLoop()
                 odom.twist.twist.linear.x, odom.twist.twist.linear.y);
 
             // -- Pre-corner lookahead alpha (used for transition only) ---------
-            // Peek at a close steer target to detect an upcoming corner early,
-            // even while still in CRUISING with its longer lookahead.
+            // Peek at a close steer target to detect an upcoming corner early.
             const std::size_t previewIdx =
                 std::min(currentGoal + TURN_GOAL_LOOKAHEAD, goals.size() - 1);
             const double alphaPreview = computeAlpha(odom, goals[previewIdx]);
 
             // -- State transition: CRUISING <-> TURNING -----------------------
             // Transition into TURNING when either:
-            //   (a) the close-lookahead alpha already exceeds the threshold
-            //       (corner is imminent), or
+            //   (a) the close-lookahead alpha already exceeds the threshold, or
             //   (b) the car is within BRAKE_PREVIEW_DIST_M of the current goal
             //       and the corner alpha at that goal is large.
-            // Hysteresis: only return to CRUISING when alpha drops well below
-            // the threshold to avoid rapid chattering at the boundary.
             const bool cornerImminent =
                 std::abs(alphaPreview) > CORNER_ALPHA_RAD ||
                 (dist < BRAKE_PREVIEW_DIST_M &&
                  std::abs(computeAlpha(odom, goal)) > CORNER_ALPHA_RAD * 0.7);
 
-            // FIX (Bug 2): if the preview index was clamped to the last goal
-            // because there are not enough goals remaining to fill the lookahead
-            // window, alphaPreview points at the final waypoint which may be
-            // nearly straight ahead even mid-corner.  Suppress the exitCorner
-            // flag in that case to prevent a spurious TURNING->CRUISING
-            // transition while the car is still working through the bend.
+            // FIX (Bug 2): suppress exit from TURNING when the preview index is
+            // clamped to the last goal -- alphaPreview would point nearly
+            // straight ahead even mid-corner, causing a spurious transition.
             const bool previewClamped =
                 (currentGoal + TURN_GOAL_LOOKAHEAD) >= goals.size();
 
-            // 20 % hysteresis band on exit; blocked when preview is clamped.
+            // 20% hysteresis band on exit; blocked when preview is clamped.
             const bool exitCorner =
                 !previewClamped &&
                 std::abs(alphaPreview) < CORNER_ALPHA_RAD * 0.8;
@@ -288,7 +268,6 @@ void RacingNode::controlLoop()
                     ? (exitCorner ? MissionState::CRUISING : MissionState::TURNING)
                     : (cornerImminent ? MissionState::TURNING : MissionState::CRUISING);
 
-            // Accumulate state transition; written back after publish calls.
             if (nextState != state) {
                 RCLCPP_INFO(this->get_logger(),
                     "State transition: %s -> %s  (alphaPreview=%.3f dist=%.2f"
@@ -299,8 +278,11 @@ void RacingNode::controlLoop()
                 pendingState = nextState;
             }
 
-            // -- [1] Lookahead: tighter in TURNING for close corner tracking ---
-            const std::size_t lookahead = (nextState == MissionState::TURNING)
+            // -- [1] Lookahead: tighten as soon as corner is imminent ---------
+            // When a corner is detected ahead (cornerImminent), switch to the
+            // closer lookahead immediately -- even before the state transitions
+            // to TURNING -- so the car begins tracking the apex early.
+            const std::size_t lookahead = cornerImminent
                 ? TURN_GOAL_LOOKAHEAD
                 : GOAL_LOOKAHEAD;
             const std::size_t steerGoalIdx =
@@ -312,11 +294,11 @@ void RacingNode::controlLoop()
             const double dAlpha = alpha - prevAlpha_;
             prevAlpha_          = alpha;
 
-            // -- [2] Steering gain: more aggressive in TURNING ----------------
-            const double steerK  = (nextState == MissionState::TURNING)
-                ? TURN_STEER_K  : STEER_K;
-            const double steerKd = (nextState == MissionState::TURNING)
-                ? TURN_STEER_KD : STEER_KD;
+            // -- [2] Steering gain: tighten as soon as corner is imminent -----
+            // Apply the higher gain whenever a corner is detected, not only
+            // after the state has fully transitioned to TURNING.
+            const double steerK  = cornerImminent ? TURN_STEER_K  : STEER_K;
+            const double steerKd = cornerImminent ? TURN_STEER_KD : STEER_KD;
 
             const double steerRaw = std::atan2(
                 2.0 * WHEELBASE_M * std::sin(alpha), dist);
@@ -332,22 +314,18 @@ void RacingNode::controlLoop()
                 ? TURN_V_MAX : V_MAX;
             const double targetSpeed = vMax * speedFactor;
 
-            // -- [4] Throttle / brake: earlier braking, feathered throttle ----
+            // -- [4] Throttle / brake -----------------------------------------
             double throttle = 0.0;
             double brake    = 0.0;
 
             if (nextState == MissionState::TURNING) {
-                // Pre-corner and mid-corner: brake to cap, feather throttle below cap.
                 if (currentSpeed > targetSpeed)
                     brake = CORNER_BRAKE;
                 else
                     throttle = TURN_THROTTLE * speedFactor;
             } else {
-                // CRUISING: full throttle to target, coast if above.
-                // Also apply anticipatory braking if a corner is close but not
-                // yet past the transition threshold (soft pre-braking).
                 if (cornerImminent && currentSpeed > TURN_V_MAX)
-                    brake = CORNER_BRAKE * 0.5;   // gentle pre-corner scrub
+                    brake = CORNER_BRAKE * 0.5;
                 else
                     throttle = (currentSpeed < targetSpeed) ? CRUISE_THROTTLE : 0.0;
             }
@@ -369,9 +347,6 @@ void RacingNode::controlLoop()
 
         } // switch
 
-        // FIX (Bug 1): write all deferred state changes back to shared state
-        // here, AFTER all publish calls have returned.  publishWaypoints() also
-        // acquires mutex_, so it must be called before we re-take the lock.
         if (doPublishWaypoints)
             publishWaypoints();
 
