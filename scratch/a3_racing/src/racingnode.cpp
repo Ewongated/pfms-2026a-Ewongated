@@ -87,7 +87,7 @@ void RacingNode::goalsCallback(const geometry_msgs::msg::PoseArray::SharedPtr ms
 {
     std::lock_guard<std::mutex> lock(mutex_);
 
-    if (state_ != MissionState::IDLE && state_ != MissionState::COMPLETE) {
+    if (state_ == MissionState::CRUISING || state_ == MissionState::TURNING) {
         RCLCPP_WARN(this->get_logger(), "Goals received while active -- ignored.");
         return;
     }
@@ -112,14 +112,14 @@ void RacingNode::missionService(
             res->message = "No goals available.";
             return;
         }
-        if (state_ == MissionState::NAVIGATING) {
+        if (state_ == MissionState::CRUISING || state_ == MissionState::TURNING) {
             res->success = true;
             res->message = "Already running.";
             return;
         }
         currentGoal_ = 0;
         waypoints_.clear();
-        state_ = MissionState::NAVIGATING;
+        state_ = MissionState::CRUISING;   // enter active driving in CRUISING
         RCLCPP_INFO(this->get_logger(), "Mission STARTED -- %zu goals.", goals_.size());
     } else {
         state_ = MissionState::IDLE;
@@ -167,11 +167,21 @@ void RacingNode::controlLoop()
 
         switch (state) {
 
+        // ── IDLE: parked, awaiting mission start ──────────────────────────────
         case MissionState::IDLE:
             publishStop();
             break;
 
-        case MissionState::NAVIGATING: {
+        // ── COMPLETE: all goals done or aborted ───────────────────────────────
+        case MissionState::COMPLETE:
+            publishStop();
+            break;
+
+        // ── CRUISING / TURNING: active driving states ─────────────────────────
+        //    Both states share the same planning pipeline; the transition between
+        //    them is determined each tick by the heading error alpha.
+        case MissionState::CRUISING:
+        case MissionState::TURNING: {
             if (!haveOdom) {
                 publishStop();
                 break;
@@ -188,16 +198,14 @@ void RacingNode::controlLoop()
             }
 
             // -- Obstacle check -----------------------------------------------
-            if (haveLaser && laserProc) {
-                if (laserProc->obstacleInFront()) {
-                    RCLCPP_WARN(this->get_logger(),
-                        "Obstacle detected ahead -- ending mission.");
-                    publishStop();
-                    publishWaypoints();
-                    std::lock_guard<std::mutex> lock(mutex_);
-                    state_ = MissionState::COMPLETE;
-                    break;
-                }
+            if (haveLaser && laserProc && laserProc->obstacleInFront()) {
+                RCLCPP_WARN(this->get_logger(),
+                    "Obstacle detected ahead -- ending mission.");
+                publishStop();
+                publishWaypoints();
+                std::lock_guard<std::mutex> lock(mutex_);
+                state_ = MissionState::COMPLETE;
+                break;
             }
 
             const geometry_msgs::msg::Point& goal = goals[currentGoal];
@@ -212,10 +220,10 @@ void RacingNode::controlLoop()
 
             if (dist < goalTolerance_ || overshot) {
                 if (overshot)
-                    RCLCPP_WARN(this->get_logger(), "Goal %zu overshot -- skipping.", currentGoal);
+                    RCLCPP_WARN(this->get_logger(),
+                        "Goal %zu overshot -- skipping.", currentGoal);
                 else
                     RCLCPP_INFO(this->get_logger(), "Goal %zu reached.", currentGoal);
-
                 {
                     std::lock_guard<std::mutex> lock(mutex_);
                     waypoints_.push_back(goal);
@@ -227,8 +235,6 @@ void RacingNode::controlLoop()
             }
 
             // -- Steering -----------------------------------------------------
-            // Steer toward a goal further ahead for earlier turn-in,
-            // but use the current goal for arrival/distance checking.
             const std::size_t steerGoalIdx =
                 std::min(currentGoal + GOAL_LOOKAHEAD, goals.size() - 1);
             const geometry_msgs::msg::Point& steerGoal = goals[steerGoalIdx];
@@ -239,7 +245,6 @@ void RacingNode::controlLoop()
 
             const double steerRaw = std::atan2(
                 2.0 * WHEELBASE_M * std::sin(alpha), dist);
-
             const double gain     = 1.0 + STEER_K * std::abs(alpha);
             const double steering = std::clamp(
                 steerRaw * gain + STEER_KD * dAlpha, -MAX_STEER, MAX_STEER);
@@ -250,32 +255,54 @@ void RacingNode::controlLoop()
             const double speedFactor  = std::max(std::cos(alpha), MIN_SPEED_FACTOR);
             const double targetSpeed  = V_MAX * speedFactor;
 
+            // -- State transition: CRUISING ↔ TURNING -------------------------
+            //    Evaluated every tick; the appropriate throttle/brake is then
+            //    applied for whichever state we are (or have just entered).
+            const bool isCornering = std::abs(alpha) > CORNER_ALPHA_RAD;
+            const MissionState nextState = isCornering
+                ? MissionState::TURNING
+                : MissionState::CRUISING;
+
+            {
+                std::lock_guard<std::mutex> lock(mutex_);
+                if (nextState != state_) {
+                    RCLCPP_INFO(this->get_logger(),
+                        "State transition: %s → %s  (alpha=%.3f rad)",
+                        stateName(state_), stateName(nextState), alpha);
+                    state_ = nextState;
+                }
+            }
+
+            // -- Throttle / brake by state ------------------------------------
             double throttle = 0.0;
             double brake    = 0.0;
 
-            if (std::abs(alpha) > CORNER_ALPHA_RAD && currentSpeed > targetSpeed) {
-                brake = CORNER_BRAKE;
+            if (nextState == MissionState::TURNING) {
+                // Cornering: scrub speed if above target; feather throttle if below.
+                if (currentSpeed > targetSpeed)
+                    brake = CORNER_BRAKE;
+                else
+                    throttle = CRUISE_THROTTLE * speedFactor;
             } else {
+                // Cruising: full throttle to target, coast above it.
                 throttle = (currentSpeed < targetSpeed) ? CRUISE_THROTTLE : 0.0;
             }
 
             // -- Debug logging ------------------------------------------------
             RCLCPP_INFO(this->get_logger(),
-                "[Nav] goal=%zu steerGoal=%zu pos=(%.2f,%.2f) target=(%.2f,%.2f) "
-                "dist=%.2f alpha=%.3f steer=%.3f thr=%.2f brk=%.0f",
+                "[%s] goal=%zu steerGoal=%zu pos=(%.2f,%.2f) target=(%.2f,%.2f) "
+                "dist=%.2f alpha=%.3f steer=%.3f thr=%.2f brk=%.0f spd=%.2f",
+                stateName(nextState),
                 currentGoal, steerGoalIdx,
                 odom.pose.pose.position.x, odom.pose.pose.position.y,
                 steerGoal.x, steerGoal.y,
-                dist, alpha, steering, throttle, brake);
+                dist, alpha, steering, throttle, brake, currentSpeed);
 
             publishCommand(throttle, brake, steering);
             break;
         }
 
-        case MissionState::COMPLETE:
-            publishStop();
-            break;
-        }
+        } // switch
 
         rate.sleep();
     }
@@ -394,4 +421,15 @@ double RacingNode::euclidean(const nav_msgs::msg::Odometry& odom,
     const double dx = pt.x - odom.pose.pose.position.x;
     const double dy = pt.y - odom.pose.pose.position.y;
     return std::sqrt(dx*dx + dy*dy);
+}
+
+const char* RacingNode::stateName(MissionState s)
+{
+    switch (s) {
+        case MissionState::IDLE:      return "IDLE";
+        case MissionState::CRUISING:  return "CRUISING";
+        case MissionState::TURNING:   return "TURNING";
+        case MissionState::COMPLETE:  return "COMPLETE";
+        default:                      return "UNKNOWN";
+    }
 }

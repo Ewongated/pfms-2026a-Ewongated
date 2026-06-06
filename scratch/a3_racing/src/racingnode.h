@@ -17,9 +17,10 @@
 #include "laserprocessing.h"
 
 enum class MissionState {
-    IDLE,
-    NAVIGATING,
-    COMPLETE
+    IDLE,       //!< Stopped, waiting for mission start
+    CRUISING,   //!< Driving forward on a straight / gentle curve -- full throttle
+    TURNING,    //!< Sharp corner -- corner braking + feathered throttle
+    COMPLETE    //!< All goals reached or mission aborted
 };
 
 class RacingNode : public rclcpp::Node
@@ -49,6 +50,7 @@ private:
     static double normaliseAngle(double angle);
     static double euclidean(const nav_msgs::msg::Odometry& odom,
                             const geometry_msgs::msg::Point& pt);
+    static const char* stateName(MissionState s);
 
     // ROS interfaces
     rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr       subOdom_;
@@ -96,6 +98,7 @@ private:
     static constexpr double      V_MAX                  = 8.0;
     static constexpr double      CORNER_ALPHA_RAD       = 0.6;
     static constexpr double      MIN_SPEED_FACTOR       = 0.3;
+    static constexpr double      CORRIDOR_CHECK_DIST_M  = 15.0;
     static constexpr double      STEER_K                = 1.2;  //!< Nonlinear steering gain
     static constexpr double      STEER_KD               = 0.5;  //!< Derivative damping gain
     static constexpr std::size_t GOAL_LOOKAHEAD         = 6;    //!< Goals ahead to steer toward
