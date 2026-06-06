@@ -119,7 +119,7 @@ void RacingNode::missionService(
         }
         currentGoal_ = 0;
         waypoints_.clear();
-        state_ = MissionState::CRUISING;   // enter active driving in CRUISING
+        state_ = MissionState::CRUISING;
         RCLCPP_INFO(this->get_logger(), "Mission STARTED -- %zu goals.", goals_.size());
     } else {
         state_ = MissionState::IDLE;
@@ -165,6 +165,13 @@ void RacingNode::controlLoop()
             laserProc   = laserProc_;
         }
 
+        // Pending state/goal updates are written back to shared state at the
+        // end of each tick, AFTER all publish calls, to avoid re-entrant
+        // mutex acquisition inside publishWaypoints().
+        MissionState pendingState   = state;
+        std::size_t  pendingGoal    = currentGoal;
+        bool         doPublishWaypoints = false;
+
         switch (state) {
 
         case MissionState::IDLE:
@@ -188,9 +195,10 @@ void RacingNode::controlLoop()
             if (currentGoal >= goals.size()) {
                 RCLCPP_INFO(this->get_logger(), "All goals reached -- COMPLETE.");
                 publishStop();
-                publishWaypoints();
-                std::lock_guard<std::mutex> lock(mutex_);
-                state_ = MissionState::COMPLETE;
+                // FIX (Bug 1): defer state write and waypoint publish to after
+                // the switch so mutex_ is not held when publishWaypoints() runs.
+                pendingState        = MissionState::COMPLETE;
+                doPublishWaypoints  = true;
                 break;
             }
 
@@ -199,9 +207,9 @@ void RacingNode::controlLoop()
                 RCLCPP_WARN(this->get_logger(),
                     "Obstacle detected ahead -- ending mission.");
                 publishStop();
-                publishWaypoints();
-                std::lock_guard<std::mutex> lock(mutex_);
-                state_ = MissionState::COMPLETE;
+                // FIX (Bug 1): same deferred pattern here.
+                pendingState        = MissionState::COMPLETE;
+                doPublishWaypoints  = true;
                 break;
             }
 
@@ -221,13 +229,19 @@ void RacingNode::controlLoop()
                         "Goal %zu overshot -- skipping.", currentGoal);
                 else
                     RCLCPP_INFO(this->get_logger(), "Goal %zu reached.", currentGoal);
+
+                // FIX (Bug 1): accumulate writes; apply after publish calls.
+                pendingGoal        = currentGoal + 1;
+                doPublishWaypoints = true;
+                // prevAlpha_ reset is safe to do here (not mutex-protected field
+                // in the hot path, only written by the control thread itself).
+                prevAlpha_ = 0.0;
+                // Still need to push the waypoint into waypoints_ -- do it now
+                // while we have local copies, then publish after the switch.
                 {
                     std::lock_guard<std::mutex> lock(mutex_);
                     waypoints_.push_back(goal);
-                    currentGoal_++;
-                    prevAlpha_ = 0.0;
                 }
-                publishWaypoints();
                 break;
             }
 
@@ -242,7 +256,7 @@ void RacingNode::controlLoop()
                 std::min(currentGoal + TURN_GOAL_LOOKAHEAD, goals.size() - 1);
             const double alphaPreview = computeAlpha(odom, goals[previewIdx]);
 
-            // -- State transition: CRUISING � TURNING -------------------------
+            // -- State transition: CRUISING <-> TURNING -----------------------
             // Transition into TURNING when either:
             //   (a) the close-lookahead alpha already exceeds the threshold
             //       (corner is imminent), or
@@ -255,8 +269,18 @@ void RacingNode::controlLoop()
                 (dist < BRAKE_PREVIEW_DIST_M &&
                  std::abs(computeAlpha(odom, goal)) > CORNER_ALPHA_RAD * 0.7);
 
-            // 20 % hysteresis band on exit to avoid chatter
+            // FIX (Bug 2): if the preview index was clamped to the last goal
+            // because there are not enough goals remaining to fill the lookahead
+            // window, alphaPreview points at the final waypoint which may be
+            // nearly straight ahead even mid-corner.  Suppress the exitCorner
+            // flag in that case to prevent a spurious TURNING->CRUISING
+            // transition while the car is still working through the bend.
+            const bool previewClamped =
+                (currentGoal + TURN_GOAL_LOOKAHEAD) >= goals.size();
+
+            // 20 % hysteresis band on exit; blocked when preview is clamped.
             const bool exitCorner =
+                !previewClamped &&
                 std::abs(alphaPreview) < CORNER_ALPHA_RAD * 0.8;
 
             const MissionState nextState =
@@ -264,15 +288,15 @@ void RacingNode::controlLoop()
                     ? (exitCorner ? MissionState::CRUISING : MissionState::TURNING)
                     : (cornerImminent ? MissionState::TURNING : MissionState::CRUISING);
 
-            {
-                std::lock_guard<std::mutex> lock(mutex_);
-                if (nextState != state_) {
-                    RCLCPP_INFO(this->get_logger(),
-                        "State transition: %s � %s  (alphaPreview=%.3f dist=%.2f)",
-                        stateName(state_), stateName(nextState),
-                        alphaPreview, dist);
-                    state_ = nextState;
-                }
+            // Accumulate state transition; written back after publish calls.
+            if (nextState != state) {
+                RCLCPP_INFO(this->get_logger(),
+                    "State transition: %s -> %s  (alphaPreview=%.3f dist=%.2f"
+                    " previewClamped=%s)",
+                    stateName(state), stateName(nextState),
+                    alphaPreview, dist,
+                    previewClamped ? "true" : "false");
+                pendingState = nextState;
             }
 
             // -- [1] Lookahead: tighter in TURNING for close corner tracking ---
@@ -331,7 +355,7 @@ void RacingNode::controlLoop()
             // -- Debug logging ------------------------------------------------
             RCLCPP_INFO(this->get_logger(),
                 "[%s] goal=%zu steer=%zu pos=(%.2f,%.2f) target=(%.2f,%.2f) "
-                "dist=%.2f �=%.3f �prev=%.3f steer=%.3f thr=%.2f brk=%.0f spd=%.2f vmax=%.1f",
+                "dist=%.2f a=%.3f ap=%.3f steer=%.3f thr=%.2f brk=%.0f spd=%.2f vmax=%.1f",
                 stateName(nextState),
                 currentGoal, steerGoalIdx,
                 odom.pose.pose.position.x, odom.pose.pose.position.y,
@@ -344,6 +368,20 @@ void RacingNode::controlLoop()
         }
 
         } // switch
+
+        // FIX (Bug 1): write all deferred state changes back to shared state
+        // here, AFTER all publish calls have returned.  publishWaypoints() also
+        // acquires mutex_, so it must be called before we re-take the lock.
+        if (doPublishWaypoints)
+            publishWaypoints();
+
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            if (pendingState != state)
+                state_ = pendingState;
+            if (pendingGoal != currentGoal)
+                currentGoal_ = pendingGoal;
+        }
 
         rate.sleep();
     }
