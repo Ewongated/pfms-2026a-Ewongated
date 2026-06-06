@@ -89,26 +89,23 @@ bool LaserProcessing::goalInCorridor(const geometry_msgs::msg::Point& goal) cons
 
     if (!haveOdom || scan.ranges.empty()) return false;
 
-    // Compute laser-frame position of the goal.
-    // Laser world pose: offset forward from odom by LASER_OFFSET_M.
-    const double yaw    = yawFromOdom(odom);
-    const double laserX = odom.pose.pose.position.x + LASER_OFFSET_M * std::cos(yaw);
-    const double laserY = odom.pose.pose.position.y + LASER_OFFSET_M * std::sin(yaw);
+    const double yaw = yawFromOdom(odom);
 
-    // Rotate goal into laser frame.
-    const double dx     = goal.x - laserX;
-    const double dy     = goal.y - laserY;
+    // Transform goal into the car's body frame (origin = odom position).
+    // We use the car frame (not laser frame) so that nearby goals that the
+    // laser has already passed don't get rejected by the localX <= 0 guard.
+    const double dx     = goal.x - odom.pose.pose.position.x;
+    const double dy     = goal.y - odom.pose.pose.position.y;
     const double localX =  dx * std::cos(-yaw) - dy * std::sin(-yaw);
     const double localY =  dx * std::sin(-yaw) + dy * std::cos(-yaw);
 
-    // Goal must be ahead of the laser (positive local X).
-    if (localX <= 0.0) return false;
+    // Goal must be at least somewhat ahead of the car.
+    if (localX <= -2.0) return false;
 
-    // Collect left-wall (positive local Y) and right-wall (negative local Y)
-    // lateral positions for all forward-facing valid readings.
-    //
-    // Fix: use median (not mean) for edge estimation to match trackCentreAhead()
-    // and to be robust against noisy or out-of-range wall returns.
+    // Collect wall readings from the laser (still in laser frame).
+    // The laser is LASER_OFFSET_M ahead of the car, so wall lateral positions
+    // in the laser frame are a close approximation to those in the car frame
+    // for the purposes of corridor width estimation.
     const int nRays = static_cast<int>(scan.ranges.size());
     std::vector<double> leftY, rightY;
     leftY.reserve(32);
@@ -119,17 +116,21 @@ bool LaserProcessing::goalInCorridor(const geometry_msgs::msg::Point& goal) cons
         const float  r     = scan.ranges[i];
         if (!std::isfinite(r) || r <= scan.range_min || r >= scan.range_max) continue;
 
+        // Only use forward-facing rays to get the lateral wall positions.
         const double px = r * std::cos(angle);
-        const double py = r * std::sin(angle);
-
         if (px <= 0.0) continue;
 
+        const double py = r * std::sin(angle);
         if (py > 0.0) leftY.push_back(py);
         else          rightY.push_back(py);
     }
 
+    // If walls aren't visible, fall back to track-width bounds.
     if (leftY.size()  < MIN_WALL_READINGS_PER_SIDE ||
-        rightY.size() < MIN_WALL_READINGS_PER_SIDE) return false;
+        rightY.size() < MIN_WALL_READINGS_PER_SIDE)
+    {
+        return std::abs(localY) < HALF_TRACK_WIDTH_M;
+    }
 
     const double leftEdge  = median(leftY);
     const double rightEdge = median(rightY);
