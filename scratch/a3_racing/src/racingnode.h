@@ -1,6 +1,5 @@
 #ifndef RACINGNODE_H
 #define RACINGNODE_H
-
 #include <rclcpp/rclcpp.hpp>
 #include <nav_msgs/msg/odometry.hpp>
 #include <sensor_msgs/msg/laser_scan.hpp>
@@ -28,7 +27,6 @@ class RacingNode : public rclcpp::Node
 public:
     RacingNode();
     ~RacingNode();
-
 private:
     // Callbacks
     void odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg);
@@ -56,13 +54,11 @@ private:
     rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr       subOdom_;
     rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr   subLaser_;
     rclcpp::Subscription<geometry_msgs::msg::PoseArray>::SharedPtr subGoals_;
-
     rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr               pubThrottle_;
     rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr               pubBrake_;
     rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr               pubSteering_;
     rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr pubMarkers_;
     rclcpp::Publisher<geometry_msgs::msg::PoseArray>::SharedPtr        pubWaypoints_;
-
     rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr service_;
 
     // Laser processing
@@ -87,17 +83,21 @@ private:
     double goalTolerance_;
     bool   advanced_;
 
-    // Constants
-    static constexpr double CONTROL_HZ       = 20.0;
-    static constexpr double CRUISE_THROTTLE  = 0.25;
-    static constexpr double MAX_BRAKE        = 8000.0;
-    static constexpr double CORNER_BRAKE     = 500.0;  //!< Light brake torque on sharp corners [Nm]
-    static constexpr double MAX_STEER        = 1.0;
-    static constexpr double WHEELBASE_M      = 2.65;
-    static constexpr double V_MAX                  = 5.0;   //!< Maximum target speed [m/s]
-    static constexpr double CORNER_ALPHA_RAD       = 0.4;   //!< Heading error above which braking is applied [rad]
-    static constexpr double MIN_SPEED_FACTOR       = 0.3;   //!< Minimum cos(alpha) throttle multiplier [0-1]
-    static constexpr double CORRIDOR_CHECK_DIST_M  = 15.0;  //!< Max distance at which goalInCorridor is checked [m]
-};
+    // Steering state
+    double prevAlpha_ = 0.0;  //!< Previous heading error for derivative damping
 
+    // Constants
+    static constexpr double      CONTROL_HZ            = 20.0;
+    static constexpr double      CRUISE_THROTTLE        = 0.5;
+    static constexpr double      MAX_BRAKE              = 8000.0;
+    static constexpr double      CORNER_BRAKE           = 8000.0;
+    static constexpr double      MAX_STEER              = 1.0;
+    static constexpr double      WHEELBASE_M            = 2.65;
+    static constexpr double      V_MAX                  = 8.0;
+    static constexpr double      CORNER_ALPHA_RAD       = 0.6;
+    static constexpr double      MIN_SPEED_FACTOR       = 0.3;
+    static constexpr double      STEER_K                = 1.2;  //!< Nonlinear steering gain
+    static constexpr double      STEER_KD               = 0.5;  //!< Derivative damping gain
+    static constexpr std::size_t GOAL_LOOKAHEAD         = 6;    //!< Goals ahead to steer toward
+};
 #endif // RACINGNODE_H

@@ -14,7 +14,7 @@ RacingNode::RacingNode()
       state_(MissionState::IDLE),
       running_(true)
 {
-    this->declare_parameter<double>("goal_tolerance", 0.8);
+    this->declare_parameter<double>("goal_tolerance", 0.6);
     this->declare_parameter<bool>("advanced", false);
 
     goalTolerance_ = this->get_parameter("goal_tolerance").as_double();
@@ -188,7 +188,6 @@ void RacingNode::controlLoop()
             }
 
             // -- Obstacle check -----------------------------------------------
-            // If anything non-wall is directly ahead, end the mission.
             if (haveLaser && laserProc) {
                 if (laserProc->obstacleInFront()) {
                     RCLCPP_WARN(this->get_logger(),
@@ -203,23 +202,6 @@ void RacingNode::controlLoop()
 
             const geometry_msgs::msg::Point& goal = goals[currentGoal];
             const double dist = euclidean(odom, goal);
-
-            // -- Goal corridor validation -------------------------------------
-            // Temporarily disabled -- goalInCorridor() was skipping valid goals
-            // due to the car being off-centre on straights, causing the active
-            // goal to jump too far ahead and the car to miss corners entirely.
-            // To be reintroduced once straight tracking is confirmed stable.
-            //
-            // if (haveLaser && laserProc && dist <= CORRIDOR_CHECK_DIST_M) {
-            //     if (!laserProc->goalInCorrider(goals[currentGoal])) {
-            //         RCLCPP_WARN(this->get_logger(),
-            //             "Goal %zu is outside the track corridor -- skipping.",
-            //             currentGoal);
-            //         std::lock_guard<std::mutex> lock(mutex_);
-            //         currentGoal_++;
-            //         break;
-            //     }
-            // }
 
             // -- Overshot check -----------------------------------------------
             const double yaw     = yawFromOdom(odom);
@@ -238,25 +220,31 @@ void RacingNode::controlLoop()
                     std::lock_guard<std::mutex> lock(mutex_);
                     waypoints_.push_back(goal);
                     currentGoal_++;
+                    prevAlpha_ = 0.0;
                 }
                 publishWaypoints();
                 break;
             }
 
             // -- Steering -----------------------------------------------------
-            // Compute heading error (alpha) from current pose to active goal,
-            // then apply the bicycle-model Pure Pursuit formula.
-            const double alpha    = computeAlpha(odom, goal);
+            // Steer toward a goal further ahead for earlier turn-in,
+            // but use the current goal for arrival/distance checking.
+            const std::size_t steerGoalIdx =
+                std::min(currentGoal + GOAL_LOOKAHEAD, goals.size() - 1);
+            const geometry_msgs::msg::Point& steerGoal = goals[steerGoalIdx];
+
+            const double alpha  = computeAlpha(odom, steerGoal);
+            const double dAlpha = alpha - prevAlpha_;
+            prevAlpha_          = alpha;
+
             const double steerRaw = std::atan2(
                 2.0 * WHEELBASE_M * std::sin(alpha), dist);
-            const double steering = std::clamp(steerRaw, -MAX_STEER, MAX_STEER);
+
+            const double gain     = 1.0 + STEER_K * std::abs(alpha);
+            const double steering = std::clamp(
+                steerRaw * gain + STEER_KD * dAlpha, -MAX_STEER, MAX_STEER);
 
             // -- Speed planning -----------------------------------------------
-            // Compute a target speed scaled by heading error -- tighter corners
-            // get a lower target. Throttle and brake are mutually exclusive:
-            // brake only fires when the car is both in a sharp corner AND
-            // already exceeding the corner target speed. This prevents the car
-            // from braking itself to a standstill on slow corners.
             const double currentSpeed = std::hypot(
                 odom.twist.twist.linear.x, odom.twist.twist.linear.y);
             const double speedFactor  = std::max(std::cos(alpha), MIN_SPEED_FACTOR);
@@ -273,11 +261,11 @@ void RacingNode::controlLoop()
 
             // -- Debug logging ------------------------------------------------
             RCLCPP_INFO(this->get_logger(),
-                "[Nav] goal=%zu pos=(%.2f,%.2f) target=(%.2f,%.2f) "
+                "[Nav] goal=%zu steerGoal=%zu pos=(%.2f,%.2f) target=(%.2f,%.2f) "
                 "dist=%.2f alpha=%.3f steer=%.3f thr=%.2f brk=%.0f",
-                currentGoal,
+                currentGoal, steerGoalIdx,
                 odom.pose.pose.position.x, odom.pose.pose.position.y,
-                goal.x, goal.y,
+                steerGoal.x, steerGoal.y,
                 dist, alpha, steering, throttle, brake);
 
             publishCommand(throttle, brake, steering);
