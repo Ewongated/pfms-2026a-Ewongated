@@ -7,7 +7,7 @@ PROJECT_BRIEF          = "ROS2 Ackerman racing platform — laser processing and
 PROJECT_NUMBER         = 1.0
 
 OUTPUT_DIRECTORY       = dox
-INPUT                  = src
+INPUT                  = src test
 RECURSIVE              = YES
 FILE_PATTERNS          = *.h *.cpp
 
