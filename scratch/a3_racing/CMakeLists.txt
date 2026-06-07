@@ -27,6 +27,7 @@ find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(rosbag2_cpp REQUIRED)
+find_package(rosbag2_storage REQUIRED)
 
 # ── laserprocessing static library ───────────────────────────────────────────
 # Built as STATIC so it is linked directly into the executable and tests —
@@ -80,6 +81,7 @@ if(BUILD_TESTING)
     nav_msgs
     geometry_msgs
     rosbag2_cpp
+    rosbag2_storage
   )
 endif()
 
