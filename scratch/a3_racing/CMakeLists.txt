@@ -26,6 +26,7 @@ find_package(tf2_ros REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(rosbag2_cpp REQUIRED)
 find_package(rosbag2_storage REQUIRED)
+find_package(ament_index_cpp REQUIRED) 
 
 # ── laserprocessing static library ────────────────────────────────────────────
 # Built STATIC so both the executable and test binary link directly against the
@@ -56,6 +57,7 @@ ament_target_dependencies(racing_node
   tf2
   tf2_ros
   tf2_geometry_msgs
+  ament_index_cpp
 )
 target_link_libraries(racing_node laserprocessing)
 

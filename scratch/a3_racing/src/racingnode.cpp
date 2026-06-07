@@ -1,208 +1,499 @@
 /**
- * @file laserprocessing.cpp
- * @brief Implementation of LaserProcessing.
+ * @file racingnode.cpp
+ * @brief Implementation of RacingNode.
  */
+#include "racingnode.h"
 
-#include "laserprocessing.h"
-#include <algorithm>
 #include <cmath>
+#include <sstream>
+#include <iomanip>
 
-// ── Construction / data updates ───────────────────────────────────────────────
+using namespace std::chrono_literals;
 
-LaserProcessing::LaserProcessing(sensor_msgs::msg::LaserScan laserScan)
-    : laserScan_(laserScan), hasOdom_(false)
+// Construction / destruction
+
+RacingNode::RacingNode()
+    : Node("racing_node"),
+      hasOdom_(false),
+      hasLaser_(false),
+      currentGoal_(0),
+      state_(MissionState::IDLE),
+      running_(true),
+      prevAlpha_(0.0)
 {
+    this->declare_parameter<double>("goal_tolerance", 1.5);
+    this->declare_parameter<bool>("advanced", false);
+
+    goalTolerance_ = this->get_parameter("goal_tolerance").as_double();
+    advanced_      = this->get_parameter("advanced").as_bool();
+
+    RCLCPP_INFO(get_logger(), "RacingNode starting tolerance=%.2f advanced=%s",
+        goalTolerance_, advanced_ ? "true" : "false");
+
+    subOdom_ = create_subscription<nav_msgs::msg::Odometry>(
+        "/orange/odom", 10,
+        std::bind(&RacingNode::odomCallback, this, std::placeholders::_1));
+
+    subLaser_ = create_subscription<sensor_msgs::msg::LaserScan>(
+        "/orange/laserscan", 10,
+        std::bind(&RacingNode::laserCallback, this, std::placeholders::_1));
+
+    subGoals_ = create_subscription<geometry_msgs::msg::PoseArray>(
+        "/orange/goals", 10,
+        std::bind(&RacingNode::goalsCallback, this, std::placeholders::_1));
+
+    pubThrottle_ = create_publisher<std_msgs::msg::Float64>("/orange/throttle_cmd", 10);
+    pubBrake_    = create_publisher<std_msgs::msg::Float64>("/orange/brake_cmd", 10);
+    pubSteering_ = create_publisher<std_msgs::msg::Float64>("/orange/steering_cmd", 10);
+    pubMarkers_  = create_publisher<visualization_msgs::msg::MarkerArray>("/visualisation_marker", 10);
+    pubWaypoints_= create_publisher<geometry_msgs::msg::PoseArray>("/orange/waypoints", 10);
+
+    service_ = create_service<std_srvs::srv::SetBool>(
+        "/orange/mission",
+        std::bind(&RacingNode::missionService, this,
+                  std::placeholders::_1, std::placeholders::_2));
+
+    controlThread_ = std::thread(&RacingNode::controlLoop, this);
+    RCLCPP_INFO(get_logger(), "RacingNode ready.");
 }
 
-void LaserProcessing::newScan(sensor_msgs::msg::LaserScan laserScan)
+RacingNode::~RacingNode()
 {
-    std::lock_guard<std::mutex> lock(mtx_);
-    laserScan_ = laserScan;
+    running_.store(false);
+    if (controlThread_.joinable()) controlThread_.join();
 }
 
-void LaserProcessing::newOdom(nav_msgs::msg::Odometry odom)
+// Callbacks 
+
+void RacingNode::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg)
 {
-    std::lock_guard<std::mutex> lock(mtx_);
-    odom_    = odom;
+    std::lock_guard<std::mutex> lock(mutex_);
+    odom_    = *msg;
     hasOdom_ = true;
+    if (laserProc_) laserProc_->newOdom(*msg);
 }
 
-// ── Public analysis ───────────────────────────────────────────────────────────
-
-bool LaserProcessing::obstacleInFront() const
+void RacingNode::laserCallback(const sensor_msgs::msg::LaserScan::SharedPtr msg)
 {
-    // Snapshot under lock, then work on the local copy.
-    std::unique_lock<std::mutex> lock(mtx_);
-    const sensor_msgs::msg::LaserScan scan = laserScan_;
-    lock.unlock();
-
-    if (scan.ranges.empty()) return false;
-
-    const double halfConeRad  = OBSTACLE_HALF_ANGLE_DEG * M_PI / 180.0;
-    unsigned int consecutive  = 0;
-
-    for (int i = 0; i < static_cast<int>(scan.ranges.size()); ++i) {
-        const double angle = scan.angle_min + i * scan.angle_increment;
-
-        // Only examine the narrow forward cone.
-        if (std::abs(angle) > halfConeRad) { consecutive = 0; continue; }
-
-        const float r = scan.ranges[i];
-        if (!std::isfinite(r) || r <= scan.range_min || r >= scan.range_max) {
-            consecutive = 0; continue;
-        }
-
-        // Walls sit at ~HALF_TRACK_WIDTH_M; anything closer is a non-wall obstacle.
-        if (r < OBSTACLE_MAX_RANGE_M) {
-            if (++consecutive >= MIN_OBSTACLE_RAYS) return true;
-        } else {
-            consecutive = 0;
-        }
+    std::lock_guard<std::mutex> lock(mutex_);
+    laser_    = *msg;
+    hasLaser_ = true;
+    if (!laserProc_) {
+        laserProc_ = std::make_shared<LaserProcessing>(*msg);
+        RCLCPP_INFO(get_logger(), "LaserProcessing initialised.");
+    } else {
+        laserProc_->newScan(*msg);
     }
-    return false;
 }
 
-bool LaserProcessing::goalInCorridor(const geometry_msgs::msg::Point& goal) const
+void RacingNode::goalsCallback(const geometry_msgs::msg::PoseArray::SharedPtr msg)
 {
-    std::unique_lock<std::mutex> lock(mtx_);
-    const sensor_msgs::msg::LaserScan scan    = laserScan_;
-    const nav_msgs::msg::Odometry     odom    = odom_;
-    const bool                        haveOdom = hasOdom_;
-    lock.unlock();
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (state_ == MissionState::CRUISING || state_ == MissionState::TURNING) {
+        RCLCPP_WARN(get_logger(), "Goals received while active ignored.");
+        return;
+    }
+    if (msg->poses.empty()) {
+        RCLCPP_WARN(get_logger(), "Empty goal list ignored.");
+        return;
+    }
+    goals_.clear();
+    for (const auto& pose : msg->poses) goals_.push_back(pose.position);
+    currentGoal_ = 0;
+    RCLCPP_INFO(get_logger(), "Received %zu goals.", goals_.size());
+}
 
-    if (!haveOdom || scan.ranges.empty()) return false;
+void RacingNode::missionService(
+    const std::shared_ptr<std_srvs::srv::SetBool::Request>  req,
+    const std::shared_ptr<std_srvs::srv::SetBool::Response> res)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
 
-    // Transform goal into the car body frame.
+    if (req->data) {
+        if (goals_.empty()) {
+            res->success = false;
+            res->message = "No goals available.";
+            return;
+        }
+        if (state_ == MissionState::CRUISING || state_ == MissionState::TURNING) {
+            // Report corridor status for the current goal while already running.
+            res->success = laserProc_ && currentGoal_ < goals_.size()
+                           && laserProc_->goalInCorridor(goals_[currentGoal_]);
+            res->message = "Already running.";
+            return;
+        }
+        currentGoal_ = 0;
+        waypoints_.clear();
+        advancedGoals_.clear();
+        state_ = MissionState::CRUISING;
+        RCLCPP_INFO(get_logger(), "Mission STARTED %zu goals.", goals_.size());
+    } else {
+        state_ = MissionState::IDLE;
+        RCLCPP_INFO(get_logger(), "Mission STOPPED.");
+    }
+
+    // Build progress string.
+    const double pct = goals_.empty() ? 0.0
+        : static_cast<double>(currentGoal_) / goals_.size() * 100.0;
+    std::ostringstream ss;
+    ss << std::fixed << std::setprecision(1) << pct
+       << "% complete (" << currentGoal_ << "/" << goals_.size() << ")";
+
+    res->success = laserProc_ && currentGoal_ < goals_.size()
+                   && laserProc_->goalInCorridor(goals_[currentGoal_]);
+    res->message = ss.str();
+}
+
+//Control loop 
+
+void RacingNode::controlLoop()
+{
+    rclcpp::Rate rate(CONTROL_HZ);
+
+    while (running_.load() && rclcpp::ok()) {
+
+        // Snapshot shared state
+        nav_msgs::msg::Odometry                odom;
+        MissionState                           state;
+        std::vector<geometry_msgs::msg::Point> goals;
+        std::size_t                            currentGoal;
+        bool                                   haveOdom, haveLaser;
+        std::shared_ptr<LaserProcessing>       laserProc;
+
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            odom        = odom_;
+            state       = state_;
+            currentGoal = currentGoal_;
+            haveOdom    = hasOdom_;
+            haveLaser   = hasLaser_;
+            laserProc   = laserProc_;
+
+            goals = goals_;
+            // In advanced mode, append laser-derived waypoints after the provided goals.
+            if (advanced_) {
+                goals.insert(goals.end(), advancedGoals_.begin(), advancedGoals_.end());
+            }
+        }
+
+        // Generate a new advanced waypoint each tick while actively driving.
+        if (advanced_ && haveOdom && laserProc &&
+            (state == MissionState::CRUISING || state == MissionState::TURNING))
+        {
+            generateAdvancedWaypoints(laserProc, odom);
+        }
+
+        MissionState pendingState      = state;
+        std::size_t  pendingGoal       = currentGoal;
+        bool         doPublishWaypoints = false;
+
+        switch (state) {
+
+        case MissionState::IDLE:
+        case MissionState::COMPLETE:
+            publishStop();
+            break;
+
+        case MissionState::CRUISING:
+        case MissionState::TURNING: {
+            if (!haveOdom) { publishStop(); break; }
+
+            // All goals exhausted 
+            if (currentGoal >= goals.size()) {
+                RCLCPP_INFO(get_logger(), "All goals reached COMPLETE.");
+                publishStop();
+                pendingState       = MissionState::COMPLETE;
+                doPublishWaypoints = true;
+                break;
+            }
+
+            // Obstacle check 
+            if (haveLaser && laserProc && laserProc->obstacleInFront()) {
+                RCLCPP_WARN(get_logger(), "Obstacle detected ending mission.");
+                publishStop();
+                pendingState       = MissionState::COMPLETE;
+                doPublishWaypoints = true;
+                break;
+            }
+
+            const geometry_msgs::msg::Point& goal = goals[currentGoal];
+
+            // Corridor validation (log only; do not skip the goal) 
+            const bool inCorridor = !haveLaser || !laserProc
+                                    || laserProc->goalInCorridor(goal);
+            if (!inCorridor) {
+                RCLCPP_DEBUG(get_logger(),
+                    "Goal %zu outside current laser corridor.", currentGoal);
+            }
+
+            const double dist = geom::euclidean(odom, goal);
+
+            // Overshot check 
+            // Use the path-tangent direction rather than the vehicle yaw so that
+            // apex goals are not spuriously skipped mid-U-turn.
+            bool overshot = false;
+            if (currentGoal > 0) {
+                const geometry_msgs::msg::Point& prev = goals[currentGoal - 1];
+                const double pathDx  = goal.x - prev.x;
+                const double pathDy  = goal.y - prev.y;
+                const double pathLen = std::hypot(pathDx, pathDy);
+                if (pathLen > 1e-6) {
+                    const double dot = (goal.x - odom.pose.pose.position.x) * (pathDx / pathLen)
+                                     + (goal.y - odom.pose.pose.position.y) * (pathDy / pathLen);
+                    overshot = (dot < 0.0) && (dist > goalTolerance_);
+                }
+            } else {
+                // Goal 0: fall back to vehicle heading dot product.
+                const double yaw = geom::yawFromOdom(odom);
+                const double dot = (goal.x - odom.pose.pose.position.x) * std::cos(yaw)
+                                 + (goal.y - odom.pose.pose.position.y) * std::sin(yaw);
+                overshot = (dot < 0.0) && (dist > goalTolerance_);
+            }
+
+            if (dist < goalTolerance_ || overshot) {
+                if (overshot)
+                    RCLCPP_WARN(get_logger(), "Goal %zu overshot skipping.", currentGoal);
+                else
+                    RCLCPP_INFO(get_logger(), "Goal %zu reached.", currentGoal);
+
+                pendingGoal        = currentGoal + 1;
+                doPublishWaypoints = true;
+                prevAlpha_         = 0.0;
+                {
+                    std::lock_guard<std::mutex> lock(mutex_);
+                    waypoints_.push_back(goal);
+                }
+                break;
+            }
+
+            // Speed 
+            const double currentSpeed = std::hypot(
+                odom.twist.twist.linear.x, odom.twist.twist.linear.y);
+
+            // Corner preview 
+            // Peek a few goals ahead for early corner detection; kept separate
+            // from the steer-target lookahead to stay responsive on straights.
+            const std::size_t previewIdx =
+                std::min(currentGoal + PREVIEW_GOAL_LOOKAHEAD, goals.size() - 1);
+            const double alphaPreview = computeAlpha(odom, goals[previewIdx]);
+
+            const bool cornerImminent =
+                std::abs(alphaPreview) > CORNER_ALPHA_RAD ||
+                (dist < BRAKE_PREVIEW_DIST_M &&
+                 std::abs(computeAlpha(odom, goal)) > CORNER_ALPHA_RAD * 0.7);
+
+            // Suppress exit from TURNING when preview index is clamped to the
+            // last goal (alphaPreview would appear small even mid-corner).
+            const bool previewClamped =
+                (currentGoal + PREVIEW_GOAL_LOOKAHEAD) >= goals.size();
+
+            const bool exitCorner =
+                !previewClamped && std::abs(alphaPreview) < CORNER_ALPHA_RAD * 0.8;
+
+            const MissionState nextState =
+                (state == MissionState::TURNING)
+                    ? (exitCorner ? MissionState::CRUISING : MissionState::TURNING)
+                    : (cornerImminent ? MissionState::TURNING : MissionState::CRUISING);
+
+            if (nextState != state) {
+                RCLCPP_INFO(get_logger(),
+                    "State: %s � %s (ap=%.3f dist=%.2f clamped=%s)",
+                    stateName(state), stateName(nextState),
+                    alphaPreview, dist, previewClamped ? "Y" : "N");
+                pendingState = nextState;
+            }
+
+            // Lookahead distance 
+            // On straights use a long fixed distance for smooth tracking.
+            // At corners shrink lookahead continuously with bend severity so
+            // the steer target pulls the car back toward the arc.
+            double lookaheadDist;
+            if (cornerImminent) {
+                const double frac = std::clamp(std::abs(alphaPreview), 0.0, M_PI) / M_PI;
+                lookaheadDist = TURN_LD_MAX - (TURN_LD_MAX - TURN_LD_MIN) * frac;
+            } else {
+                lookaheadDist = CRUISE_LOOKAHEAD_DIST_M;
+            }
+
+            // Walk forward to find the first goal at or beyond lookaheadDist.
+            std::size_t steerIdx = goals.size() - 1;
+            for (std::size_t k = currentGoal; k < goals.size(); ++k) {
+                steerIdx = k;
+                if (geom::euclidean(odom, goals[k]) >= lookaheadDist) break;
+            }
+            const geometry_msgs::msg::Point& steerGoal = goals[steerIdx];
+
+            //Steering
+            const double alpha  = computeAlpha(odom, steerGoal);
+            const double dAlpha = alpha - prevAlpha_;
+            prevAlpha_          = alpha;
+
+            const double steerK  = cornerImminent ? TURN_STEER_K  : STEER_K;
+            const double steerKd = cornerImminent ? TURN_STEER_KD : STEER_KD;
+
+            const double steerRaw = std::atan2(2.0 * WHEELBASE_M * std::sin(alpha), dist);
+            const double steering = std::clamp(
+                steerRaw * (1.0 + steerK * std::abs(alpha)) + steerKd * dAlpha,
+                -MAX_STEER, MAX_STEER);
+
+            //Throttle / brake 
+            const double minFactor   = (nextState == MissionState::TURNING)
+                ? MIN_SPEED_FACTOR_TURN : MIN_SPEED_FACTOR;
+            const double speedFactor = std::max(std::cos(alpha), minFactor);
+            const double vMax        = (nextState == MissionState::TURNING)
+                ? TURN_V_MAX : V_MAX;
+            const double targetSpeed = vMax * speedFactor;
+
+            double throttle = 0.0, brake = 0.0;
+            if (nextState == MissionState::TURNING) {
+                if (currentSpeed > targetSpeed) brake    = CORNER_BRAKE;
+                else                            throttle = TURN_THROTTLE * speedFactor;
+            } else {
+                if (cornerImminent && currentSpeed > TURN_V_MAX)
+                    brake    = CORNER_BRAKE * 0.5;
+                else
+                    throttle = (currentSpeed < targetSpeed) ? CRUISE_THROTTLE : 0.0;
+            }
+
+            RCLCPP_INFO(get_logger(),
+                "[%s] g=%zu st=%zu ld=%.1f pos=(%.2f,%.2f) tgt=(%.2f,%.2f) "
+                "d=%.2f a=%.3f ap=%.3f str=%.3f thr=%.2f brk=%.0f v=%.2f corr=%s",
+                stateName(nextState), currentGoal, steerIdx, lookaheadDist,
+                odom.pose.pose.position.x, odom.pose.pose.position.y,
+                steerGoal.x, steerGoal.y,
+                dist, alpha, alphaPreview, steering, throttle, brake,
+                currentSpeed, inCorridor ? "Y" : "N");
+
+            publishCommand(throttle, brake, steering);
+            break;
+        }
+
+        } // switch
+
+        if (doPublishWaypoints) publishWaypoints();
+
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            if (pendingState != state)      state_       = pendingState;
+            if (pendingGoal  != currentGoal) currentGoal_ = pendingGoal;
+        }
+
+        rate.sleep();
+    }
+}
+
+// Helpers 
+
+double RacingNode::computeAlpha(const nav_msgs::msg::Odometry& odom,
+                                const geometry_msgs::msg::Point& target) const
+{
     const double yaw    = geom::yawFromOdom(odom);
-    const double dx     = goal.x - odom.pose.pose.position.x;
-    const double dy     = goal.y - odom.pose.pose.position.y;
+    const double dx     = target.x - odom.pose.pose.position.x;
+    const double dy     = target.y - odom.pose.pose.position.y;
+    if (std::hypot(dx, dy) < 1e-6) return 0.0;
+
     const double localX =  dx * std::cos(-yaw) - dy * std::sin(-yaw);
     const double localY =  dx * std::sin(-yaw) + dy * std::cos(-yaw);
+    return std::atan2(localY, localX);
+}
 
-    if (localX <= -2.0) return false; // Goal is well behind the car.
+void RacingNode::publishStop()
+{
+    publishCommand(0.0, MAX_BRAKE, 0.0);
+}
 
-    std::vector<double> leftY, rightY;
-    collectWallReadings(scan, leftY, rightY);
+void RacingNode::publishCommand(double throttle, double brake, double steering)
+{
+    std_msgs::msg::Float64 t, b, s;
+    t.data = throttle; b.data = brake; s.data = steering;
+    pubThrottle_->publish(t);
+    pubBrake_->publish(b);
+    pubSteering_->publish(s);
+}
 
-    // Fall back to nominal track width when walls are not clearly visible.
-    if (leftY.size() < MIN_WALL_READINGS_PER_SIDE ||
-        rightY.size() < MIN_WALL_READINGS_PER_SIDE)
+void RacingNode::publishWaypoints()
+{
+    std::vector<geometry_msgs::msg::Point> wps;
     {
-        return std::abs(localY) < HALF_TRACK_WIDTH_M;
+        std::lock_guard<std::mutex> lock(mutex_);
+        wps = waypoints_;
+    }
+    if (wps.empty()) return;
+
+    const rclcpp::Time now = get_clock()->now();
+    visualization_msgs::msg::MarkerArray markerArray;
+    geometry_msgs::msg::PoseArray poseArray;
+    poseArray.header.stamp    = now;
+    poseArray.header.frame_id = "world";
+
+    for (std::size_t i = 0; i < wps.size(); ++i) {
+        // Orientation points toward the next waypoint (or continues from the previous).
+        const double wpYaw = (i + 1 < wps.size())
+            ? std::atan2(wps[i+1].y - wps[i].y, wps[i+1].x - wps[i].x)
+            : (i > 0 ? std::atan2(wps[i].y - wps[i-1].y, wps[i].x - wps[i-1].x) : 0.0);
+
+        tf2::Quaternion q;
+        q.setRPY(0.0, 0.0, wpYaw);
+
+        visualization_msgs::msg::Marker m;
+        m.header.frame_id  = "world";
+        m.header.stamp     = now;
+        m.ns               = "road";
+        m.id               = static_cast<int>(i);
+        m.type             = visualization_msgs::msg::Marker::CYLINDER;
+        m.action           = visualization_msgs::msg::Marker::ADD;
+        m.lifetime         = rclcpp::Duration(0, 0);
+        m.pose.position    = wps[i];
+        m.pose.orientation = tf2::toMsg(q);
+        m.scale.x = 0.4;  // diameter = 2 � 0.2 m radius (spec)
+        m.scale.y = 0.4;
+        m.scale.z = 0.5;
+        m.color.r = 0.0f; m.color.g = 0.8f; m.color.b = 0.2f; m.color.a = 0.8f;
+        markerArray.markers.push_back(m);
+
+        geometry_msgs::msg::Pose pose;
+        pose.position    = wps[i];
+        pose.orientation = tf2::toMsg(q);
+        poseArray.poses.push_back(pose);
     }
 
-    const double minY = median(rightY) - CORRIDOR_TOLERANCE_M;
-    const double maxY = median(leftY)  + CORRIDOR_TOLERANCE_M;
-    return (localY >= minY && localY <= maxY);
+    pubMarkers_->publish(markerArray);
+    pubWaypoints_->publish(poseArray);
 }
 
-std::optional<geometry_msgs::msg::Point> LaserProcessing::trackCentreAhead() const
+void RacingNode::generateAdvancedWaypoints(
+    const std::shared_ptr<LaserProcessing>& laserProc,
+    const nav_msgs::msg::Odometry& odom)
 {
-    std::unique_lock<std::mutex> lock(mtx_);
-    const sensor_msgs::msg::LaserScan scan    = laserScan_;
-    const nav_msgs::msg::Odometry     odom    = odom_;
-    const bool                        haveOdom = hasOdom_;
-    lock.unlock();
+    const auto centre = laserProc->trackCentreAhead();
+    if (!centre.has_value()) return;
 
-    if (!haveOdom || scan.ranges.empty()) return std::nullopt;
+    const geometry_msgs::msg::Point& pt = centre.value();
 
-    std::vector<double> leftY, rightY;
-    collectWallReadings(scan, leftY, rightY);
-
-    if (leftY.size() < MIN_WALL_READINGS_PER_SIDE ||
-        rightY.size() < MIN_WALL_READINGS_PER_SIDE) return std::nullopt;
-
-    const double centreY = (median(leftY) + median(rightY)) / 2.0;
-
-    // Place the centre point 5 m ahead in the laser frame, then transform.
-    geometry_msgs::msg::Point laserPt;
-    laserPt.x = 5.0;
-    laserPt.y = centreY;
-    laserPt.z = 0.0;
-    return laserToWorld(laserPt, odom);
-}
-
-unsigned int LaserProcessing::countSegments() const
-{
-    std::unique_lock<std::mutex> lock(mtx_);
-    const sensor_msgs::msg::LaserScan scan = laserScan_;
-    lock.unlock();
-
-    unsigned int segments = 0;
-    bool inSegment = false;
-    geometry_msgs::msg::Point prev;
-    constexpr double JUMP = 1.0; // m — gap larger than this starts a new segment
-
-    for (unsigned int i = 0; i < scan.ranges.size(); ++i) {
-        const float r = scan.ranges[i];
-        if (!std::isfinite(r) || r <= scan.range_min || r >= scan.range_max) {
-            inSegment = false; continue;
-        }
-
-        const geometry_msgs::msg::Point cur = polarToCart(scan, i);
-        if (!inSegment) {
-            ++segments;
-            inSegment = true;
-        } else {
-            if (std::hypot(cur.x - prev.x, cur.y - prev.y) > JUMP)
-                ++segments;
-        }
-        prev = cur;
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (!advancedGoals_.empty()) {
+        const geometry_msgs::msg::Point& last = advancedGoals_.back();
+        if (std::hypot(pt.x - last.x, pt.y - last.y) < WAYPOINT_SPACING_M) return;
+    } else {
+        // Accept the first point only if it is ahead of the car.
+        const double yaw = geom::yawFromOdom(odom);
+        const double dot = (pt.x - odom.pose.pose.position.x) * std::cos(yaw)
+                         + (pt.y - odom.pose.pose.position.y) * std::sin(yaw);
+        if (dot <= 0.0) return;
     }
-    return segments;
+
+    advancedGoals_.push_back(pt);
+    RCLCPP_INFO(get_logger(), "[advanced] Waypoint #%zu at (%.2f, %.2f)",
+        advancedGoals_.size(), pt.x, pt.y);
 }
 
-// ── Private helpers ───────────────────────────────────────────────────────────
-
-void LaserProcessing::collectWallReadings(const sensor_msgs::msg::LaserScan& scan,
-                                          std::vector<double>& leftY,
-                                          std::vector<double>& rightY)
+const char* RacingNode::stateName(MissionState s)
 {
-    leftY.reserve(32);
-    rightY.reserve(32);
-
-    for (int i = 0; i < static_cast<int>(scan.ranges.size()); ++i) {
-        const double angle = scan.angle_min + i * scan.angle_increment;
-        const float  r     = scan.ranges[i];
-        if (!std::isfinite(r) || r <= scan.range_min || r >= scan.range_max) continue;
-        if (r * std::cos(angle) <= 0.0) continue; // Ignore backward-facing rays.
-
-        const double py = r * std::sin(angle);
-        if (py > 0.0) leftY.push_back(py);
-        else          rightY.push_back(py);
+    switch (s) {
+        case MissionState::IDLE:     return "IDLE";
+        case MissionState::CRUISING: return "CRUISING";
+        case MissionState::TURNING:  return "TURNING";
+        case MissionState::COMPLETE: return "COMPLETE";
+        default:                     return "UNKNOWN";
     }
-}
-
-geometry_msgs::msg::Point LaserProcessing::polarToCart(
-    const sensor_msgs::msg::LaserScan& scan, unsigned int index)
-{
-    const double angle = scan.angle_min + scan.angle_increment * index;
-    const float  r     = scan.ranges[index];
-    geometry_msgs::msg::Point pt;
-    pt.x = static_cast<double>(r) * std::cos(angle);
-    pt.y = static_cast<double>(r) * std::sin(angle);
-    pt.z = 0.0;
-    return pt;
-}
-
-geometry_msgs::msg::Point LaserProcessing::laserToWorld(
-    const geometry_msgs::msg::Point& laserPt,
-    const nav_msgs::msg::Odometry&   odom)
-{
-    const double yaw    = geom::yawFromOdom(odom);
-    const double laserX = odom.pose.pose.position.x + LASER_OFFSET_M * std::cos(yaw);
-    const double laserY = odom.pose.pose.position.y + LASER_OFFSET_M * std::sin(yaw);
-
-    geometry_msgs::msg::Point world;
-    world.x = laserX + laserPt.x * std::cos(yaw) - laserPt.y * std::sin(yaw);
-    world.y = laserY + laserPt.x * std::sin(yaw) + laserPt.y * std::cos(yaw);
-    world.z = 0.0;
-    return world;
-}
-
-double LaserProcessing::median(std::vector<double>& v)
-{
-    std::sort(v.begin(), v.end());
-    const std::size_t n = v.size();
-    return (n % 2 == 0) ? (v[n/2 - 1] + v[n/2]) / 2.0 : v[n/2];
 }
