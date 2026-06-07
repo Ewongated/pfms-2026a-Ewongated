@@ -1,0 +1,61 @@
+---------------------------------------------------------------------
+ TASK 1-4 
+---------------------------------------------------------------------
+**********************************************************************
+Making tests distributed with quiz
+----------------------------------------------------------------------
+Executing test TASK 1 - 4
+---------------------------------------------------------------------
+Running main() from /opt/ros/humble/src/gtest_vendor/src/gtest_main.cc
+[==========] Running 4 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 4 tests from LaserProcessing
+[ RUN      ] LaserProcessing.CountReturns
+[       OK ] LaserProcessing.CountReturns (8 ms)
+[ RUN      ] LaserProcessing.CountSegments
+[       OK ] LaserProcessing.CountSegments (3 ms)
+[ RUN      ] LaserProcessing.DetectClosestCone
+[       OK ] LaserProcessing.DetectClosestCone (2 ms)
+[ RUN      ] LaserProcessing.DetectRoadCentre
+/home/student/pfms_ws/src/quiz5/test/utest.cpp:156: Failure
+The difference between pt.x and 2.1 is 22.845938587188719, which exceeds 0.2, where
+pt.x evaluates to 24.945938587188721,
+2.1 evaluates to 2.1000000000000001, and
+0.2 evaluates to 0.20000000000000001.
+/home/student/pfms_ws/src/quiz5/test/utest.cpp:157: Failure
+The difference between pt.y and 0.241 is 2.0624983940124513, which exceeds 0.2, where
+pt.y evaluates to -1.8214983940124512,
+0.241 evaluates to 0.24099999999999999, and
+0.2 evaluates to 0.20000000000000001.
+[  FAILED  ] LaserProcessing.DetectRoadCentre (3 ms)
+[----------] 4 tests from LaserProcessing (16 ms total)
+
+[----------] Global test environment tear-down
+[==========] 4 tests from 1 test suite ran. (16 ms total)
+[  PASSED  ] 3 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] LaserProcessing.DetectRoadCentre
+
+ 1 FAILED TEST
+---------------------------------------------------------------------
+---------------------------------------------------------------------
+Part A TASK 1-4 scored 3
+---------------------------------------------------------------------
+---------------------------------------------------------------------
+ TASK 5 
+---------------------------------------------------------------------
+**********************************************************************
+Making main node distributed with quiz
+----------------------------------------------------------------------
+Starting >>> quiz5
+Finished <<< quiz5 [0.14s]
+
+Summary: 1 package finished [0.42s]
+---------------------------------------------------------------------
+Executing ros2 service call - A2
+---------------------------------------------------------------------
+[INFO] [1778629504.655492066] [diagnostics_node]: OK
+---------------------------------------------------------------------
+---------------------------------------------------------------------
+TASK 5 scored 1
+---------------------------------------------------------------------

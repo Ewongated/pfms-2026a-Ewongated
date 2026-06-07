@@ -1,0 +1,79 @@
+
+/** \mainpage
+
+@htmlinclude manifest.html
+
+@b a3_support is a support package prepared for PfMS to assist students in completing Assignment 3 - Individual Project
+
+The support package contains four executables/nodes that support (1) saving GOALS to a file from an interactive rviz session (2) publishing goals from a file to a topic (3) taking a snapshot of a number of topics using `rviz2` and finally (4) loading the simulation environments directly into rviz.
+
+@section a3_support Goals Publisher
+
+The goals_publisher node will load goals from a file and publish it and terminate. 
+
+The GOALS file syntax is space seperated rows of three values (x y z). Examine data/ folder for any of the supplied goals for syntax.
+
+Goals are published to `/goals` topic by deafult as a `geometry_msgs::PoseArray`. Each goal is a Pose in the array, the position of Goal is provided while the orientation is a quaternion of 0 degrees.
+
+The goals are also published on `/visualization_marker` topic as a visualization_msgs::MarkerArray. Each goal is a Marker in the array. The Marker is reported in world coordinate frames, namespace goals, type CUBE, colour green, 50% transparency. CUBES are centred around the goal, with sides equal to 1m.A text is also published above 0.5m above the cube.
+
+To run the goals_publisher loading the default file GOALS.TXT which is in this package (data folder)
+
+  rosrun a3_support goals_publisher
+
+You can supply a goal file `ros2 run a3_support goals_publisher --ros-args -p filename:=<full filename>` for instance:
+
+    ros2 run a3_support goals_publisher --ros-args -p filename:=/home/student/my_goals.txt
+
+To change the topic goals are published you can use ROS mapping of topics.<br>
+For instance, publishing to /goals/mission is mapping /goals to this topic name  <b> --remap original_topic:=new_topic </b> redirect. For instance:
+
+    ros2 run a3_support goals_publisher --remap /goals:=/goals/mission
+
+\image html pic/rviz.png width=800
+
+@section a3_support Goals Logger
+
+The goals_logger node will save goals to a file. It subscribers to `/goal_pose` topic and uses points for logging from `geometry_msgs::PoseStamped`. Each goal is a PoseStamped, the position is saved, orientation is disregarded. To get the pose you need to use the `2D Goal Pose` tool, right clicking on rviz while holding the button to gte the correct orinetation. When you release the button the pose is recorded. You need rviz2 to click on items, so you shoudl run a launch file for your project.
+
+The goals are also visualised via `/visualization_marker` topic as a `visualization_msgs::MarkerArray` Each goal is a Marker in the array. The Marker is reported in world coordinate frames, namespace goals_clicked, type CUBE, colour violet, 50% transparency. CUBES are centred around the goal, with sides equal to 1m.
+
+You need to supply the filename (will default to filename GOALS.TXT in folder where executing rosrun), if unable to open file for writting node will terminate immediately. <br>
+If you have supplied a filename previosuly, it will re-use the filename, overwriting the contents.
+
+    ros2 run a3_support goals_logger --ros-args -p filename:=<full filename>
+
+For instance
+
+    ros2 run a3_support goals_logger --ros-args -p filename:=/home/student/my_goals.txt
+
+Note: If not enalbed. recommed to select View (TopDownOrtho) - as indicated on left of image
+
+\image html pic/rviz2.png width=800
+
+The output on screen will be:
+
+    [ INFO] [1653533129.051458500]: file name with goals to be saved:/home/student/my_goals.txt
+    [ INFO] [1653533180.040708019, 614.209000000]: Saving: 0.00537686 2.67446 -0.00143433
+
+Terminating the node will close the file, And you can view it via:
+
+    student@lucani:~$ more my_goals.txt
+    0.00537686 2.67446 -0.00143433
+
+@section a3_support STL Publisher
+
+In order to select goals it is useful to use rviz2, and ideally you can load the entire environment that gazebo uses rather than just the current view from the sensors on your platform. For projects 1 and 3 we have the ability to load the entire `terrain` or `race track`. To do so we can use the `stl_publisher` node and following syntax
+
+    ros2 run a3_support stl_publisher --ros-args -p project:=3
+
+Change the argument for `project` to be able to visualise the environemnt for the specific project. In project 2 the environments is constructed directly in gazbo from a floor plan and therefore we do not have an ability to visualise it in this way.
+
+@section a3_support STL Publisher
+
+
+
+
+
+*/
+

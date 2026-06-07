@@ -1,0 +1,126 @@
+/*!
+
+*/
+
+// Without this gap between two doxygen definitions, the last group does not
+// get populated properly.
+
+/*!
+@mainpage Assignment 2 — Threading, Synchronisation and Data Integrity
+
+@section overview Overview
+
+This submission implements a multi-platform autonomous mission controller in C++17.
+Two platforms — an Audi R8 (Ackerman steering) and a Clearpath Husky (skid-steer) —
+are driven concurrently through sequences of waypoints using a background-threaded
+control architecture.
+
+@section architecture Architecture
+
+The class hierarchy is as follows:
+
+@code
+ControllerInterface  (interface — do not modify)
+    └── Controller        (abstract base: threading, goal management, odometry)
+            ├── Ackerman  (Audi R8 — Audi bicycle model, arc-following control)
+            └── Skidsteer (Husky — rotate-then-drive control)
+
+RangerInterface      (interface — do not modify)
+    └── Ranger            (abstract base: connector, geometry, sensor pose)
+            ├── Laser     (270° laser scan, POINT sensing)
+            └── Sonar     (30° cone, single range, CONE sensing)
+
+MissionInterface     (interface — do not modify)
+    └── Mission           (coordinates controllers; BASIC and ADVANCED modes)
+@endcode
+
+@section threading Threading Design
+
+Each `Controller` subclass runs a single background thread launched by
+`execute(true)`. The thread calls `driveToGoal()` for each goal in sequence
+and sets status to IDLE when the list is exhausted. `execute(false)` signals
+the thread via `std::atomic<bool> running_` and joins it — ensuring the
+object can be safely destroyed at any time.
+
+`Mission` runs its own background thread (`runMission()`) that starts all
+controllers concurrently and monitors their progress. In ADVANCED mode it
+additionally checks for obstacles between goals using the laser sensor.
+
+All shared state in `Controller` and `Mission` is protected by `std::mutex`.
+Atomic flags (`running_`) are used for signalling without holding locks, avoiding
+the deadlock risk of signalling under a mutex that the thread also holds.
+
+@section ackerman Ackerman Control Strategy
+
+The Audi R8 controller uses the `Audi` library (bicycle geometric model):
+
+- **Reachable goal** (constant-arc path exists): the library returns a steering
+  angle. Full throttle is applied beyond `BRAKE_DISTANCE` (15 m); a linear
+  ramp reduces throttle to zero within that distance. Once inside `tolerance_`,
+  a brake loop runs until |v| < 0.05 m/s before the goal is declared reached.
+
+- **Unreachable goal** (goal inside minimum turning circle): a corrective arc
+  is driven at low throttle (0.2) with full steering lock toward the goal
+  bearing. A divergence guard detects if the car is spiralling away and applies
+  a full brake to reset before retrying.
+
+@section skidsteer Skidsteer Control Strategy
+
+The Husky controller uses a rotate-then-drive strategy:
+
+1. Rotate on the spot at `MAX_ANGULAR_VEL` (1.0 rad/s) until the heading
+   error is below `HEADING_TOL` (0.05 rad).
+2. Drive forward at up to `MAX_LINEAR_VEL` (2.0 m/s) with a proportional
+   heading correction. Throttle is reduced linearly within `SLOW_DIST` (3 m)
+   of the goal.
+3. Issue a zero-velocity command when within `tolerance_`.
+
+@section obstacle Obstacle Detection (ADVANCED mode)
+
+After each goal is reached, `Mission` reads the laser on that platform and
+computes the bearing from the sensor's world-frame position to the next goal.
+Any laser ray within ±5° of that bearing whose range is more than 1 m shorter
+than the goal distance is considered an obstacle. If detected, `execute(false)`
+is called on that controller and it is marked abandoned. Other controllers
+continue unaffected.
+
+@section running Running the Executable
+
+Start the Gazebo simulator first:
+@code
+ros2 launch pfms a2.launch.py
+@endcode
+
+Then run the executable:
+@code
+# BASIC mode
+./a2 ../data/ACKERMAN.TXT ../data/SKIDSTEER.TXT
+
+# ADVANCED mode (obstacle detection enabled)
+./a2 ../data/ACKERMAN.TXT ../data/SKIDSTEER.TXT -advanced
+@endcode
+
+Expected behaviour: both platforms navigate through their respective waypoint
+lists concurrently. Progress is printed every 200 ms as a percentage. On
+completion the program prints "Mission complete." and exits. In ADVANCED mode
+with an obstacle present, the obstructed platform stops early while the other
+continues to completion.
+
+@section tests Unit Tests
+
+Four unit tests are provided in the `test/` directory:
+
+| Executable              | Tests                                              |
+|-------------------------|----------------------------------------------------|
+| testAudiReachGoals      | Ackerman reaches 3 goals directly via controller   |
+| testSkidSteerReachGoals | Skidsteer reaches 3 goals directly via controller  |
+| testMissionReachGoals   | Both platforms via Mission BASIC mode (< 100 s)    |
+| testMissionObstruction  | ADVANCED mode — box at goal 3 triggers abandonment |
+
+Build and run all tests:
+@code
+cd build && cmake .. && make && ctest --output-on-failure
+@endcode
+
+@author Student
+*/

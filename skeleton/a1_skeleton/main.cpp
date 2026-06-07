@@ -1,69 +1,116 @@
 #include <vector>
 #include <iostream>
-#include <thread> // added to delay the execution of the code (for visualisation)
-
+#include <thread>
+#include <cmath>
 #include "laser.h"
 #include "sonar.h"
 #include "fusion.h"
 #include "cell.h"
-#include <random>
 
 int main(int argc, char *argv[]) {
 
+    // Note: run with simulator already set up:
+    // ACKERMAN at (0,2,0), box1 at (10,2,0.25), box2 at (10,2,1.05)
 
-    std::vector<RangerInterface*> rangers;
-    // Create instances of Laser and Sonar sensors from ACKERMAN platform
-    Laser laser (pfms::PlatformType::ACKERMAN);
-    Sonar sonar (pfms::PlatformType::ACKERMAN);
-    rangers.push_back(&laser);
-    rangers.push_back(&sonar);
+    Laser laser(pfms::PlatformType::ACKERMAN);
+    Sonar sonar(pfms::PlatformType::ACKERMAN);
 
-    // Add the sensors to fusion
-    Fusion fusion(rangers);
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
-    // Create a few cells to test the fusion
-    std::vector<pfms::Cell*> cells;
-    cells.push_back(new pfms::Cell(17,6.5,2.0));
-    cells.push_back(new pfms::Cell(4,-5,1.0));
-    cells.push_back(new pfms::Cell(12,2,0.5));
-    cells.push_back(new pfms::Cell(8,2,1.0));
+    auto laserData = laser.getData();
+    auto pose = laser.getSensorPose();
 
-    double x, y;
+    double sx = pose.position.x, sy = pose.position.y, syaw = pose.yaw;
+    double fovRad = laser.getFieldOfView() * M_PI / 180.0;
+    double angRes = laser.getAngularResolution() * M_PI / 180.0;
+    double startAngle = syaw - fovRad / 2.0;
+    double minR = laser.getMinRange();
 
-    for (unsigned int i=0; i<cells.size(); i++) {
+    std::cout << "Sensor: (" << sx << "," << sy << ") yaw="
+              << (180/M_PI)*syaw << "deg" << std::endl;
 
-        cells.at(static_cast<unsigned long>(i))->getCentre(x,y);
-        std::cout << "Cell #" << i+1 << " is located at " << x << ", " << y << " with side length "
-                  << cells.at(i)->getSide() << std::endl;
-
+    int finiteCount = 0;
+    for (auto r : laserData) {
+        if (std::isfinite(r) && r >= minR) finiteCount++;
     }
+    std::cout << "Finite readings: " << finiteCount << " / "
+              << laserData.size() << std::endl;
 
-    int cnt = 0;
-    for (auto i : rangers) {
-        auto sensor_type = i->getSensingMethod();
-        auto sensor_location = i->getSensorPose();
-        auto sensor_resolution = i->getAngularResolution();
+    // Check the three failing cells
+    struct CellInfo { double cx, cy, side; std::string name; std::string expect; };
+    std::vector<CellInfo> failCells = {
+        {5,  -2, 1, "cell1(5,-2)",  "FREE"},
+        {4,   4, 1, "cell5(4,4)",   "FREE"},
+        {9.8, 2, 1, "cell0(9.8,2)", "OCCUPIED"},
+    };
 
-        std::cout << "\nsensor #" << ++cnt << "\ntype is: " << sensor_type << "\nlocation is: ("
-                  << sensor_location.position.x << ", " << 
-                  sensor_location.position.y << ", " << 
-                  (180/M_PI)*sensor_location.yaw
-                  << ") \nsensor resolution is: " << sensor_resolution << std::endl;
-    }
+    for (auto& fc : failCells) {
+        double half = fc.side / 2.0;
+        std::cout << "\n--- " << fc.name << " (expect " << fc.expect << ") ---" << std::endl;
 
-    // Set the cells to fusion
-    fusion.setCells(cells);
+        int passThrough=0, endInside=0, endPast=0, endBefore=0;
 
-    while (true) {
-        // Grab the data from the sensors and fuse it
-        fusion.grabAndFuseData();
-        std::cout << " " << std::endl;
-        std::cout << "The scanning area [m^2] for the current sensor readings is: " << fusion.getScanningArea() << std::endl;
-        for (int i=0; i<cells.size(); i++) {
-            std::cout << "Cell #" << i+1 << " state is: " << cells.at(static_cast<unsigned long>(i))->getState() << std::endl;
-            cells.at(static_cast<unsigned long>(i))->setState(pfms::cell::UNKNOWN);
+        for (size_t i = 0; i < laserData.size(); ++i) {
+            double range = laserData.at(i);
+            if (!std::isfinite(range) || range < minR) continue;
+
+            double angle = startAngle + i * angRes;
+            double ex = sx + range * std::cos(angle);
+            double ey = sy + range * std::sin(angle);
+
+            // Slab test
+            double dx = ex-sx, dy = ey-sy;
+            double tEntry=0.0, tExit=1.0;
+            bool hit = true;
+
+            if (std::abs(dx) < 1e-10) {
+                if (sx < fc.cx-half || sx > fc.cx+half) hit=false;
+            } else {
+                double t1=(fc.cx-half-sx)/dx, t2=(fc.cx+half-sx)/dx;
+                if(t1>t2) std::swap(t1,t2);
+                tEntry=std::max(tEntry,t1); tExit=std::min(tExit,t2);
+                if(tEntry>tExit) hit=false;
+            }
+            if (hit) {
+                if (std::abs(dy) < 1e-10) {
+                    if (sy < fc.cy-half || sy > fc.cy+half) hit=false;
+                } else {
+                    double t1=(fc.cy-half-sy)/dy, t2=(fc.cy+half-sy)/dy;
+                    if(t1>t2) std::swap(t1,t2);
+                    tEntry=std::max(tEntry,t1); tExit=std::min(tExit,t2);
+                    if(tEntry>tExit) hit=false;
+                }
+            }
+
+            if (!hit) continue;
+            passThrough++;
+
+            bool inCell = (ex>=fc.cx-half && ex<=fc.cx+half &&
+                           ey>=fc.cy-half && ey<=fc.cy+half);
+            if (inCell) {
+                endInside++;
+                std::cout << "  INSIDE ray[" << i << "] angle="
+                          << (180/M_PI)*angle << "deg range=" << range
+                          << " end=(" << ex << "," << ey << ")" << std::endl;
+            } else if (tExit < 1.0) {
+                endPast++;
+                if (endPast <= 3)
+                    std::cout << "  PAST ray[" << i << "] angle="
+                              << (180/M_PI)*angle << "deg range=" << range
+                              << " end=(" << ex << "," << ey << ")"
+                              << " tExit=" << tExit << std::endl;
+            } else {
+                endBefore++;
+                if (endBefore <= 3)
+                    std::cout << "  BEFORE ray[" << i << "] angle="
+                              << (180/M_PI)*angle << "deg range=" << range
+                              << " tEntry=" << tEntry << " tExit=" << tExit << std::endl;
+            }
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        std::cout << "Summary: passThrough=" << passThrough
+                  << " endInside=" << endInside
+                  << " endPast=" << endPast
+                  << " endBefore=" << endBefore << std::endl;
     }
 
     return 0;

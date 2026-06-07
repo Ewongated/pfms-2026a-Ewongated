@@ -1,0 +1,54 @@
+[1;4;31m Executing tests distributed with quiz [0m
+---------------------------------------------------------------------
+[==========] Running 3 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 3 tests from SkidsteerTest
+[ RUN      ] SkidsteerTest.Constructor
+[       OK ] SkidsteerTest.Constructor (532 ms)
+[ RUN      ] SkidsteerTest.CheckObstacles
+Obstacles: 1
+Obstacle at (2.94585, -65.1431, 0)
+[       OK ] SkidsteerTest.CheckObstacles (1901 ms)
+[ RUN      ] SkidsteerTest.StartingLogic
+Initial Odo: (0, 0, 0)
+Current Odo: (2.68583, -0.123449, 0)
+Distance travelled: 2.68866m
+[       OK ] SkidsteerTest.StartingLogic (3618 ms)
+[----------] 3 tests from SkidsteerTest (6053 ms total)
+
+[----------] Global test environment tear-down
+[==========] 3 tests from 1 test suite ran. (6053 ms total)
+[  PASSED  ] 3 tests.
+---------------------------------------------------------------------
+[1;4;31m Executing marking tests [0m
+---------------------------------------------------------------------
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from SkidSteerTest
+[ RUN      ] SkidSteerTest.CheckObstaclesMoving
+[       OK ] SkidSteerTest.CheckObstaclesMoving (3215 ms)
+[----------] 1 test from SkidSteerTest (3215 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (3215 ms total)
+[  PASSED  ] 1 test.
+---------------------------------------------------------------------
+---------------------------------------------------------------------
+Part A scored 4
+---------------------------------------------------------------------
+[1;4;31m Executing tests distributed with quiz [0m
+---------------------------------------------------------------------
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from AnalysisTest
+[ RUN      ] AnalysisTest.CountCharacters
+[       OK ] AnalysisTest.CountCharacters (0 ms)
+[----------] 1 test from AnalysisTest (0 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (0 ms total)
+[  PASSED  ] 1 test.
+---------------------------------------------------------------------
+---------------------------------------------------------------------
+Part B scored 1
+---------------------------------------------------------------------

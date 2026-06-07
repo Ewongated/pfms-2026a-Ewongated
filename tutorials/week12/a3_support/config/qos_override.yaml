@@ -1,0 +1,5 @@
+/tf_static:
+  history: keep_last
+  depth: 1
+  durability: transient_local
+  reliability: reliable

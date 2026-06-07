@@ -1,0 +1,29 @@
+[0.032s] Invoking command in '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/build/a3_racing': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/humble /usr/bin/cmake --build /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/build/a3_racing -- -j8 -l8
+[0.156s] [ 18%] Built target laserprocessing
+[0.194s] [ 36%] Built target gtest
+[0.223s] [35m[1mConsolidate compiler generated dependencies of target racing_node[0m
+[0.338s] [ 63%] Built target racing_node
+[0.393s] [ 81%] Built target gtest_main
+[0.444s] [100%] Built target test_racing
+[0.482s] Invoked command in '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/build/a3_racing' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/humble /usr/bin/cmake --build /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/build/a3_racing -- -j8 -l8
+[0.494s] Invoking command in '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/build/a3_racing': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/humble /usr/bin/cmake --install /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/build/a3_racing
+[0.525s] -- Install configuration: ""
+[0.528s] -- Up-to-date: /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/lib/a3_racing/racing_node
+[0.530s] -- Up-to-date: /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/a3_racing/data
+[0.531s] -- Up-to-date: /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/a3_racing/data/sample
+[0.535s] -- Up-to-date: /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/ament_index/resource_index/package_run_dependencies/a3_racing
+[0.535s] -- Up-to-date: /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/ament_index/resource_index/parent_prefix_path/a3_racing
+[0.535s] -- Up-to-date: /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/a3_racing/environment/ament_prefix_path.sh
+[0.536s] -- Up-to-date: /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/a3_racing/environment/ament_prefix_path.dsv
+[0.536s] -- Up-to-date: /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/a3_racing/environment/path.sh
+[0.536s] -- Up-to-date: /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/a3_racing/environment/path.dsv
+[0.537s] -- Up-to-date: /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/a3_racing/local_setup.bash
+[0.537s] -- Up-to-date: /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/a3_racing/local_setup.sh
+[0.539s] -- Up-to-date: /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/a3_racing/local_setup.zsh
+[0.540s] -- Up-to-date: /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/a3_racing/local_setup.dsv
+[0.542s] -- Installing: /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/a3_racing/package.dsv
+[0.552s] -- Up-to-date: /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/ament_index/resource_index/packages/a3_racing
+[0.552s] -- Up-to-date: /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/a3_racing/cmake/a3_racingConfig.cmake
+[0.553s] -- Up-to-date: /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/a3_racing/cmake/a3_racingConfig-version.cmake
+[0.553s] -- Up-to-date: /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/install/a3_racing/share/a3_racing/package.xml
+[0.553s] Invoked command in '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/build/a3_racing' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/humble /usr/bin/cmake --install /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/build/a3_racing

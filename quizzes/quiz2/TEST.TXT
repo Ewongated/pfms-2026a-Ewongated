@@ -1,0 +1,86 @@
+---------------------------------------------------------------------
+ A 
+---------------------------------------------------------------------
+-- The C compiler identification is GNU 11.4.0
+-- The CXX compiler identification is GNU 11.4.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Found OpenCV: /usr (found version "4.5.4") 
+-- Looking for libray in /home/student/git/pfms-2026a-/pfms-2026a-Ewongated/quizzes/quiz2/a/dep
+-- Architecture: x86_64
+-- Found GTest: /usr/lib/x86_64-linux-gnu/cmake/GTest/GTestConfig.cmake (found version "1.11.0")  
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/student/git/pfms-2026a-/pfms-2026a-Ewongated/quizzes/quiz2/a/build
+**********************************************************************
+Making tests distributed with quiz
+----------------------------------------------------------------------
+[ 16%] Building CXX object CMakeFiles/displayrace.dir/display_race.cpp.o
+[ 33%] Linking CXX static library libdisplayrace.a
+[ 33%] Built target displayrace
+[ 50%] Building CXX object CMakeFiles/analysis.dir/analysis.cpp.o
+[ 66%] Linking CXX static library libanalysis.a
+[ 66%] Built target analysis
+[ 83%] Building CXX object marking/CMakeFiles/selfTest.dir/utest.cpp.o
+[100%] Linking CXX executable selfTest
+[100%] Built target selfTest
+----------------------------------------------------------------------
+Making marking 
+----------------------------------------------------------------------
+[ 12%] Building CXX object marking/CMakeFiles/mockcar.dir/mock/carmock.cpp.o
+[ 25%] Linking CXX static library libmockcar.a
+[ 25%] Built target mockcar
+Consolidate compiler generated dependencies of target displayrace
+[ 50%] Built target displayrace
+Consolidate compiler generated dependencies of target analysis
+[ 75%] Built target analysis
+[ 87%] Building CXX object marking/CMakeFiles/markingTest.dir/utest2.cpp.o
+[100%] Linking CXX executable markingTest
+[100%] Built target markingTest
+----------------------------------------------------------------------
+Executing tests distributed with quiz
+---------------------------------------------------------------------
+[==========] Running 3 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 3 tests from AnalysisTest
+[ RUN      ] AnalysisTest.DragRace
+[       OK ] AnalysisTest.DragRace (6667 ms)
+[ RUN      ] AnalysisTest.StopAllCars
+[       OK ] AnalysisTest.StopAllCars (2492 ms)
+[ RUN      ] AnalysisTest.zeroTopZeroRace
+[       OK ] AnalysisTest.zeroTopZeroRace (26374 ms)
+[----------] 3 tests from AnalysisTest (35534 ms total)
+
+[----------] Global test environment tear-down
+[==========] 3 tests from 1 test suite ran. (35534 ms total)
+[  PASSED  ] 3 tests.
+---------------------------------------------------------------------
+---------------------------------------------------------------------
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from AnalysisTest
+[ RUN      ] AnalysisTest.SortOdo
+[       OK ] AnalysisTest.SortOdo (0 ms)
+[----------] 1 test from AnalysisTest (0 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (0 ms total)
+[  PASSED  ] 1 test.
+---------------------------------------------------------------------
+---------------------------------------------------------------------
+Part A scored 4
+---------------------------------------------------------------------
+---------------------------------------------------------------------
+NO ATTEMPT at B 
+---------------------------------------------------------------------
+---------------------------------------------------------------------
+Part B scored 0
+---------------------------------------------------------------------

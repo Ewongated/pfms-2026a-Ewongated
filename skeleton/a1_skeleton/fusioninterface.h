@@ -65,7 +65,7 @@ public:
      *
      * @sa grabAndFuseData
      */
-    virtual std::vector<double> getObjectDentre() = 0;
+    virtual std::vector<double> getObjectCentre() = 0;
 
 
 };

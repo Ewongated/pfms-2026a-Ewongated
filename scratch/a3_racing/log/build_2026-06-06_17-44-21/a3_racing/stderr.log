@@ -1,0 +1,3 @@
+gmake[2]: *** [CMakeFiles/laserprocessing.dir/build.make:76: CMakeFiles/laserprocessing.dir/src/laserprocessing.cpp.o] Interrupt
+gmake[1]: *** [CMakeFiles/Makefile2:159: CMakeFiles/laserprocessing.dir/all] Interrupt
+gmake: *** [Makefile:146: all] Interrupt

@@ -1,0 +1,38 @@
+# Doxyfile for a3_racing
+# Run from the package root: doxygen dox/Doxyfile
+# Output lands in dox/html/index.html
+
+PROJECT_NAME           = "A3 Racing Track"
+PROJECT_BRIEF          = "ROS2 Ackerman racing platform — laser processing and autonomous control"
+PROJECT_NUMBER         = 1.0
+
+OUTPUT_DIRECTORY       = dox
+INPUT                  = src test
+RECURSIVE              = YES
+FILE_PATTERNS          = *.h *.cpp
+
+# Extract everything, including undocumented members
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = YES
+EXTRACT_STATIC         = YES
+
+# Build a full call/caller graph (requires dot from Graphviz)
+HAVE_DOT               = YES
+CALL_GRAPH             = YES
+CALLER_GRAPH           = YES
+COLLABORATION_GRAPH    = YES
+
+# Output formats
+GENERATE_HTML          = YES
+GENERATE_LATEX         = NO
+
+# Source browser so readers can click through to the code
+SOURCE_BROWSER         = YES
+INLINE_SOURCES         = NO
+STRIP_CODE_COMMENTS    = NO
+
+# Warn loudly about undocumented items
+WARN_IF_UNDOCUMENTED   = YES
+WARN_IF_DOC_ERROR      = YES
+WARN_NO_PARAMDOC       = YES
+QUIET                  = NO

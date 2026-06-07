@@ -1,0 +1,6 @@
+[0.050s] Invoking command in '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/build/a3_racing': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/humble /usr/bin/cmake --build /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/build/a3_racing -- -j8 -l8
+[0.215s] [  9%] [32mBuilding CXX object CMakeFiles/laserprocessing.dir/src/laserprocessing.cpp.o[0m
+[0.733s] gmake[2]: *** [CMakeFiles/laserprocessing.dir/build.make:76: CMakeFiles/laserprocessing.dir/src/laserprocessing.cpp.o] Interrupt
+[0.734s] gmake[1]: *** [CMakeFiles/Makefile2:159: CMakeFiles/laserprocessing.dir/all] Interrupt
+[0.734s] gmake: *** [Makefile:146: all] Interrupt
+[0.735s] Invoked command in '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/build/a3_racing' returned '-2': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/humble /usr/bin/cmake --build /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/build/a3_racing -- -j8 -l8
