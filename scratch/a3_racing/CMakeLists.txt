@@ -9,11 +9,9 @@ endif()
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic -Wunused-parameter)
-else()
-  add_compile_options(-Wunused-parameter)
 endif()
 
-# ── Find packages ─────────────────────────────────────────────────────────────
+# ── Dependencies ──────────────────────────────────────────────────────────────
 find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_ros REQUIRED)
 find_package(rclcpp REQUIRED)
@@ -29,9 +27,9 @@ find_package(tf2_geometry_msgs REQUIRED)
 find_package(rosbag2_cpp REQUIRED)
 find_package(rosbag2_storage REQUIRED)
 
-# ── laserprocessing static library ───────────────────────────────────────────
-# Built as STATIC so it is linked directly into the executable and tests —
-# no separate .so file is needed at runtime.
+# ── laserprocessing static library ────────────────────────────────────────────
+# Built STATIC so both the executable and test binary link directly against the
+# object code — no separate shared library is needed at runtime.
 add_library(laserprocessing STATIC
   src/laserprocessing.cpp
 )
@@ -61,15 +59,9 @@ ament_target_dependencies(racing_node
 )
 target_link_libraries(racing_node laserprocessing)
 
-# ── Install targets ───────────────────────────────────────────────────────────
-install(TARGETS racing_node
-  DESTINATION lib/${PROJECT_NAME}
-)
-
-install(
-  DIRECTORY data
-  DESTINATION share/${PROJECT_NAME}
-)
+# ── Install ───────────────────────────────────────────────────────────────────
+install(TARGETS racing_node DESTINATION lib/${PROJECT_NAME})
+install(DIRECTORY data DESTINATION share/${PROJECT_NAME})
 
 # ── Tests ─────────────────────────────────────────────────────────────────────
 if(BUILD_TESTING)

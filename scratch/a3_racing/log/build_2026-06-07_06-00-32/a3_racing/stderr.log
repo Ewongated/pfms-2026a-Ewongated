@@ -1,0 +1,3 @@
+gmake[2]: *** [CMakeFiles/racing_node.dir/build.make:90: CMakeFiles/racing_node.dir/src/racingnode.cpp.o] Interrupt
+gmake[1]: *** [CMakeFiles/Makefile2:185: CMakeFiles/racing_node.dir/all] Interrupt
+gmake: *** [Makefile:146: all] Interrupt

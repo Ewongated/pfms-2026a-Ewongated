@@ -1,0 +1,39 @@
+[0.030s] Invoking command in '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/build/a3_racing': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/humble /usr/bin/cmake --build /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/build/a3_racing -- -j8 -l8
+[0.104s] -- Found ament_cmake: 1.3.13 (/opt/ros/humble/share/ament_cmake/cmake)
+[0.351s] -- Found ament_cmake_ros: 0.10.0 (/opt/ros/humble/share/ament_cmake_ros/cmake)
+[0.357s] -- Found rclcpp: 16.0.18 (/opt/ros/humble/share/rclcpp/cmake)
+[0.406s] -- Found rosidl_generator_c: 3.1.8 (/opt/ros/humble/share/rosidl_generator_c/cmake)
+[0.412s] -- Found rosidl_adapter: 3.1.8 (/opt/ros/humble/share/rosidl_adapter/cmake)
+[0.422s] -- Found rosidl_generator_cpp: 3.1.8 (/opt/ros/humble/share/rosidl_generator_cpp/cmake)
+[0.439s] -- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+[0.457s] -- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+[0.510s] -- Found rmw_implementation_cmake: 6.1.2 (/opt/ros/humble/share/rmw_implementation_cmake/cmake)
+[0.512s] -- Found rmw_fastrtps_cpp: 6.2.10 (/opt/ros/humble/share/rmw_fastrtps_cpp/cmake)
+[0.763s] -- Using RMW implementation 'rmw_fastrtps_cpp' as default
+[0.896s] -- Found nav_msgs: 4.9.1 (/opt/ros/humble/share/nav_msgs/cmake)
+[0.953s] -- Found sensor_msgs: 4.9.1 (/opt/ros/humble/share/sensor_msgs/cmake)
+[0.986s] -- Found visualization_msgs: 4.9.1 (/opt/ros/humble/share/visualization_msgs/cmake)
+[1.021s] -- Found std_srvs: 4.9.1 (/opt/ros/humble/share/std_srvs/cmake)
+[1.032s] -- Found tf2: 0.25.19 (/opt/ros/humble/share/tf2/cmake)
+[1.040s] -- Found tf2_ros: 0.25.19 (/opt/ros/humble/share/tf2_ros/cmake)
+[1.215s] -- Found tf2_geometry_msgs: 0.25.19 (/opt/ros/humble/share/tf2_geometry_msgs/cmake)
+[1.220s] -- Found eigen3_cmake_module: 0.1.1 (/opt/ros/humble/share/eigen3_cmake_module/cmake)
+[1.221s] -- Ensuring Eigen3 include directory is part of orocos-kdl CMake target
+[1.224s] -- Found rosbag2_cpp: 0.15.16 (/opt/ros/humble/share/rosbag2_cpp/cmake)
+[1.289s] -- Found gtest sources under '/opt/ros/humble/src/gtest_vendor': C++ tests using 'Google Test' will be built
+[1.862s] -- Configuring done
+[1.956s] -- Generating done
+[1.982s] -- Build files have been written to: /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/build/a3_racing
+[2.053s] [35m[1mConsolidate compiler generated dependencies of target laserprocessing[0m
+[2.090s] [  9%] [32mBuilding CXX object CMakeFiles/laserprocessing.dir/src/laserprocessing.cpp.o[0m
+[3.494s] [ 18%] [32m[1mLinking CXX static library liblaserprocessing.a[0m
+[3.554s] [ 18%] Built target laserprocessing
+[3.584s] [35m[1mConsolidate compiler generated dependencies of target gtest[0m
+[3.613s] [ 36%] Built target gtest
+[3.651s] [35m[1mConsolidate compiler generated dependencies of target racing_node[0m
+[3.703s] [ 45%] [32mBuilding CXX object CMakeFiles/racing_node.dir/src/main_racing.cpp.o[0m
+[8.854s] [ 54%] [32mBuilding CXX object CMakeFiles/racing_node.dir/src/racingnode.cpp.o[0m
+[16.332s] gmake[2]: *** [CMakeFiles/racing_node.dir/build.make:90: CMakeFiles/racing_node.dir/src/racingnode.cpp.o] Interrupt
+[16.332s] gmake[1]: *** [CMakeFiles/Makefile2:185: CMakeFiles/racing_node.dir/all] Interrupt
+[16.332s] gmake: *** [Makefile:146: all] Interrupt
+[16.338s] Invoked command in '/home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/build/a3_racing' returned '-2': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/humble /usr/bin/cmake --build /home/student/ros2_ws/src/pfms-2026a-Ewongated/scratch/a3_racing/build/a3_racing -- -j8 -l8
